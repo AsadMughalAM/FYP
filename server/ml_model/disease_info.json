@@ -1,0 +1,111 @@
+{
+  "foot-and-mouth": {
+    "name": "Foot and Mouth Disease",
+    "severity": "Critical",
+    "symptoms": [
+      "Fever",
+      "Blisters on mouth, tongue, and hooves",
+      "Excessive salivation",
+      "Lameness",
+      "Loss of appetite",
+      "Reduced milk production"
+    ],
+    "causes": [
+      "Viral infection (FMD virus)",
+      "Contact with infected animals",
+      "Contaminated equipment or vehicles",
+      "Aerosol transmission"
+    ],
+    "treatment": [
+      "Isolate affected animals immediately",
+      "Supportive care and fluids",
+      "Antibiotics to prevent secondary infections",
+      "Pain management",
+      "Soft, palatable feed",
+      "Veterinary supervision required"
+    ],
+    "prevention": [
+      "Vaccination programs",
+      "Biosecurity measures",
+      "Quarantine new animals",
+      "Disinfect equipment and vehicles",
+      "Control movement of animals",
+      "Report to veterinary authorities"
+    ],
+    "duration": "2-3 weeks (highly contagious)",
+    "contagious": true,
+    "antibiotics": [
+      "Amoxicillin",
+      "Penicillin",
+      "Oxytetracycline"
+    ]
+  },
+  
+  "lumpy": {
+    "name": "Lumpy Skin Disease",
+    "severity": "High",
+    "symptoms": [
+      "Fever",
+      "Skin nodules (lumps) on body",
+      "Swollen lymph nodes",
+      "Loss of appetite",
+      "Reduced milk production",
+      "Lameness"
+    ],
+    "causes": [
+      "Viral infection (LSD virus)",
+      "Vector transmission (flies, mosquitoes)",
+      "Contact with infected animals",
+      "Contaminated equipment"
+    ],
+    "treatment": [
+      "Supportive care",
+      "Antibiotics for secondary infections",
+      "Anti-inflammatory drugs",
+      "Wound care for skin lesions",
+      "Fluid therapy",
+      "Isolation of affected animals"
+    ],
+    "prevention": [
+      "Vaccination",
+      "Vector control (insecticides)",
+      "Biosecurity measures",
+      "Quarantine procedures",
+      "Regular health monitoring"
+    ],
+    "duration": "2-4 weeks",
+    "contagious": true,
+    "antibiotics": [
+      "Oxytetracycline",
+      "Penicillin",
+      "Streptomycin"
+    ]
+  },
+  
+  "healthy": {
+    "name": "Healthy",
+    "severity": "None",
+    "symptoms": [
+      "Normal appearance",
+      "Good body condition",
+      "Active behavior",
+      "Normal appetite"
+    ],
+    "causes": [],
+    "treatment": [
+      "Maintain current management",
+      "Continue regular health checks",
+      "Proper nutrition",
+      "Clean environment"
+    ],
+    "prevention": [
+      "Good management practices",
+      "Regular veterinary checks",
+      "Proper vaccination schedule",
+      "Clean water and feed"
+    ],
+    "duration": "N/A",
+    "contagious": false,
+    "antibiotics": []
+  }
+}

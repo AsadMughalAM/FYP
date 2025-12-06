@@ -636,3 +636,367 @@ class StatisticsAPIView(APIView):
             "average_confidence": round(avg_confidence, 3),
             "latest_detection": detections.first().created_at if detections.exists() else None
         })
+
+
+from .dataset_processor import DatasetProcessor
+from .models import SymptomDiagnosis
+from .serializers import SymptomDiagnosisSerializer
+
+class SymptomsAPIView(APIView):
+    """Get list of all symptoms from dataset"""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """Return all available symptoms"""
+        try:
+            processor = DatasetProcessor()
+            symptoms = processor.get_symptoms()
+            
+            return Response({
+                "success": True,
+                "count": len(symptoms),
+                "symptoms": symptoms
+            })
+        except FileNotFoundError as e:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Dataset not found",
+                    "message": str(e)
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Failed to load symptoms",
+                    "message": str(e)
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class DiagnoseAPIView(APIView):
+    """Diagnose disease based on symptoms"""
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        """
+        Diagnose disease from symptoms
+        
+        Expected JSON:
+        {
+            "symptoms": ["fever", "lameness", "loss of appetite"]
+        }
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        try:
+            logger.info(f"🔍 DiagnoseAPIView POST request received")
+            logger.info(f"📦 Content-Type: {request.content_type}")
+            logger.info(f"📦 Request method: {request.method}")
+            
+            symptoms = request.data.get('symptoms', [])
+            logger.info(f"📦 Request data: {request.data}")
+            logger.info(f"✅ Extracted symptoms: {symptoms}")
+            logger.info(f"✅ Symptoms type: {type(symptoms)}")
+            logger.info(f"✅ Symptoms length: {len(symptoms) if isinstance(symptoms, list) else 'N/A'}")
+            
+            if not symptoms:
+                logger.warning("❌ No symptoms provided in request")
+                return Response(
+                    {
+                        "success": False,
+                        "error": "No symptoms provided",
+                        "message": "Please provide at least one symptom",
+                        "received_data": str(request.data)
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if not isinstance(symptoms, list):
+                logger.warning(f"❌ Symptoms is not a list, type: {type(symptoms)}")
+                return Response(
+                    {
+                        "success": False,
+                        "error": "Invalid format",
+                        "message": "Symptoms must be a list",
+                        "received_type": str(type(symptoms)),
+                        "received_data": str(symptoms)
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            logger.info(f"🔄 Initializing DatasetProcessor...")
+            processor = DatasetProcessor()
+            logger.info(f"🔄 Calling diagnose with symptoms: {symptoms}")
+            results = processor.diagnose(symptoms, top_n=5)
+            logger.info(f"✅ Diagnosis complete, found {len(results)} results")
+            
+            if not results:
+                logger.info("⚠️ No matching diseases found")
+                return Response({
+                    "success": True,
+                    "message": "No matching diseases found for the provided symptoms",
+                    "results": [],
+                    "suggestions": "Try selecting different symptoms or check spelling",
+                    "input_symptoms": symptoms
+                })
+            
+            # Get the best result (first one, highest confidence)
+            best_result = results[0]
+            disease_id = best_result.get('disease_id', '')
+            disease_name_from_result = best_result.get('disease_name', 'Unknown')
+            
+            # Extract optional fields from request
+            animal_name = request.data.get('animal_name', '')
+            animal_age = request.data.get('animal_age', None)
+            notes = request.data.get('notes', '')
+            
+            # Fetch REAL-TIME disease info from Gemini API (same as image-based detection)
+            logger.info(f"")
+            logger.info(f"🔄🔄🔄 FETCHING REAL-TIME GEMINI DATA FOR SYMPTOM DIAGNOSIS 🔄🔄🔄")
+            logger.info(f"🔄 Disease ID: {disease_id}")
+            logger.info(f"🔄 Disease Name: {disease_name_from_result}")
+            
+            # Use disease_id if available, otherwise use disease_name
+            gemini_disease_key = disease_id if disease_id else disease_name_from_result.lower().replace(' ', '-')
+            
+            from .gemini_service import GEMINI_API_KEY, GEMINI_MODEL
+            logger.info(f"🔄 Calling Gemini API for: {gemini_disease_key}")
+            logger.info(f"🔄 Model: {GEMINI_MODEL}")
+            
+            gemini_info = get_disease_info(gemini_disease_key, use_cache=False, force_fresh=True)
+            
+            # Log the data source
+            data_source = gemini_info.get('_source', 'unknown')
+            logger.info(f"🔄 Data source: {data_source}")
+            
+            # Use Gemini data if available, otherwise fallback to dataset processor data
+            if data_source == 'gemini_api':
+                logger.info(f"✅✅✅ SUCCESS: REAL-TIME GEMINI DATA RECEIVED ✅✅✅")
+                logger.info(f"✅ Disease: {gemini_info.get('name', disease_name_from_result)}")
+                logger.info(f"✅ Severity: {gemini_info.get('severity', 'Unknown')}")
+                logger.info(f"✅ Treatment count: {len(gemini_info.get('treatment', []))}")
+                logger.info(f"✅ Prevention count: {len(gemini_info.get('prevention', []))}")
+                logger.info(f"✅ Medicines count: {len(gemini_info.get('antibiotics', []))}")
+                
+                # Update best_result with Gemini data
+                best_result['disease_name'] = gemini_info.get('name', disease_name_from_result)
+                best_result['severity'] = gemini_info.get('severity', 'Unknown')
+                best_result['treatment'] = gemini_info.get('treatment', [])
+                best_result['prevention'] = gemini_info.get('prevention', [])
+                best_result['medicines'] = gemini_info.get('antibiotics', [])
+                best_result['contagious'] = gemini_info.get('contagious', False)
+                
+                # Update all results with Gemini data for the best match
+                results[0] = best_result
+            else:
+                logger.warning(f"⚠️ Gemini API returned {data_source}, using dataset processor data")
+                # Keep the original data from dataset processor
+            
+            # Save diagnosis to database with Gemini-enhanced data
+            try:
+                logger.info(f"💾 Saving diagnosis to database with Gemini data...")
+                diagnosis = SymptomDiagnosis.objects.create(
+                    user=request.user,
+                    animal_name=animal_name or None,
+                    animal_age=animal_age,
+                    input_symptoms=symptoms,
+                    disease_name=best_result.get('disease_name', 'Unknown'),
+                    disease_id=disease_id,
+                    confidence_score=best_result.get('confidence', 0.0),
+                    match_rate=best_result.get('match_rate', 0.0) / 100.0,  # Convert percentage to decimal
+                    severity=best_result.get('severity', 'Unknown'),
+                    matched_symptoms=best_result.get('matched_symptoms', []),
+                    treatment=best_result.get('treatment', []),
+                    prevention=best_result.get('prevention', []),
+                    medicines=best_result.get('medicines', []),
+                    contagious=best_result.get('contagious', False),
+                    all_results=results,  # Store all results for reference
+                    notes=notes or None,
+                    status='diagnosed'
+                )
+                logger.info(f"✅ Diagnosis saved with ID: {diagnosis.id}")
+                logger.info(f"✅ Saved with Gemini-enhanced data: {data_source == 'gemini_api'}")
+                
+                # Serialize the saved diagnosis for response
+                serializer = SymptomDiagnosisSerializer(diagnosis, context={'request': request})
+                saved_diagnosis_data = serializer.data
+                
+            except Exception as save_error:
+                logger.error(f"❌ Error saving diagnosis to database: {str(save_error)}")
+                import traceback
+                logger.error(traceback.format_exc())
+                saved_diagnosis_data = None
+            
+            logger.info(f"✅ Returning {len(results)} disease matches")
+            response_data = {
+                "success": True,
+                "message": f"Found {len(results)} possible disease(s)",
+                "results": results,
+                "input_symptoms": symptoms,
+                "diagnosis_id": saved_diagnosis_data.get('id') if saved_diagnosis_data else None,
+                "saved": saved_diagnosis_data is not None,
+                "gemini_enhanced": data_source == 'gemini_api'  # Indicate if Gemini data was used
+            }
+            
+            if saved_diagnosis_data:
+                response_data["saved_diagnosis"] = saved_diagnosis_data
+            
+            logger.info(f"📤 Sending response with {len(results)} results")
+            logger.info(f"📤 Gemini enhanced: {response_data['gemini_enhanced']}")
+            return Response(response_data, status=status.HTTP_200_OK)
+            
+        except FileNotFoundError as e:
+            logger.error(f"❌ FileNotFoundError: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return Response(
+                {
+                    "success": False,
+                    "error": "Dataset not found",
+                    "message": str(e),
+                    "details": "Please ensure dataset files exist in server/Dataset/"
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            import traceback
+            error_trace = traceback.format_exc()
+            logger.error(f"❌ Exception in DiagnoseAPIView: {str(e)}")
+            logger.error(f"❌ Traceback: {error_trace}")
+            print(f"❌ ERROR in DiagnoseAPIView: {str(e)}")
+            print(f"❌ Traceback: {error_trace}")
+            return Response(
+                {
+                    "success": False,
+                    "error": "Diagnosis failed",
+                    "message": str(e),
+                    "error_type": type(e).__name__,
+                    "details": error_trace.split('\n')[-5:] if error_trace else None
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class DiseaseDetailAPIView(APIView):
+    """Get detailed information about a specific disease"""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, disease_id):
+        """
+        Get disease details by ID
+        
+        Args:
+            disease_id: Disease identifier (e.g., 'mastitis', 'foot-and-mouth')
+        """
+        try:
+            processor = DatasetProcessor()
+            disease_details = processor.get_disease_details(disease_id)
+            
+            if not disease_details.get('name'):
+                return Response(
+                    {
+                        "success": False,
+                        "error": "Disease not found",
+                        "message": f"Disease '{disease_id}' not found in dataset"
+                    },
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            return Response({
+                "success": True,
+                "data": disease_details
+            })
+            
+        except Exception as e:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Failed to fetch disease details",
+                    "message": str(e)
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class SymptomDiagnosisHistoryAPIView(APIView):
+    """Get symptom diagnosis history for current user"""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """Get all symptom diagnoses for current user"""
+        try:
+            diagnoses = SymptomDiagnosis.objects.filter(user=request.user).order_by('-created_at')
+            serializer = SymptomDiagnosisSerializer(diagnoses, many=True, context={'request': request})
+            return Response({
+                "success": True,
+                "count": diagnoses.count(),
+                "data": serializer.data
+            })
+        except Exception as e:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Failed to fetch diagnosis history",
+                    "message": str(e)
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class SymptomDiagnosisDetailAPIView(APIView):
+    """Get specific symptom diagnosis details"""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, diagnosis_id):
+        """Get symptom diagnosis details"""
+        try:
+            diagnosis = SymptomDiagnosis.objects.get(
+                id=diagnosis_id,
+                user=request.user
+            )
+            serializer = SymptomDiagnosisSerializer(diagnosis, context={'request': request})
+            return Response({
+                "success": True,
+                "data": serializer.data
+            })
+        except SymptomDiagnosis.DoesNotExist:
+            return Response(
+                {"success": False, "error": "Diagnosis not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+    def patch(self, request, diagnosis_id):
+        """Update symptom diagnosis status and notes"""
+        try:
+            diagnosis = SymptomDiagnosis.objects.get(
+                id=diagnosis_id,
+                user=request.user
+            )
+            
+            # Update allowed fields
+            if 'status' in request.data:
+                diagnosis.status = request.data['status']
+            if 'notes' in request.data:
+                diagnosis.notes = request.data['notes']
+            if 'animal_name' in request.data:
+                diagnosis.animal_name = request.data['animal_name']
+            if 'animal_age' in request.data:
+                diagnosis.animal_age = request.data['animal_age']
+            
+            diagnosis.save()
+            serializer = SymptomDiagnosisSerializer(diagnosis, context={'request': request})
+            return Response({
+                "success": True,
+                "data": serializer.data
+            })
+            
+        except SymptomDiagnosis.DoesNotExist:
+            return Response(
+                {"success": False, "error": "Diagnosis not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )

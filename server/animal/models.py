@@ -45,3 +45,57 @@ class AnimalDetection(models.Model):
 
     def __str__(self):
         return f"{self.animal_name or 'Unknown'} - {self.disease_name or 'N/A'} ({self.confidence_score*100:.1f}%)"
+
+
+class SymptomDiagnosis(models.Model):
+    """Model for storing symptom-based disease diagnosis results"""
+    SEVERITY_CHOICES = [
+        ('None', 'None'),
+        ('Low', 'Low'),
+        ('Medium', 'Medium'),
+        ('High', 'High'),
+        ('Critical', 'Critical'),
+        ('Unknown', 'Unknown'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    animal_name = models.CharField(max_length=100, blank=True, null=True)
+    animal_age = models.IntegerField(null=True, blank=True)
+    input_symptoms = models.JSONField(default=list)  # Symptoms submitted by user
+    disease_name = models.CharField(max_length=100, blank=True, null=True)
+    disease_id = models.CharField(max_length=100, blank=True, null=True)  # Original disease ID from dataset
+    confidence_score = models.FloatField(default=0.0)  # 0-1 confidence
+    match_rate = models.FloatField(default=0.0)  # Percentage of symptoms matched
+    severity = models.CharField(max_length=20, choices=SEVERITY_CHOICES, default='Unknown')
+    matched_symptoms = models.JSONField(default=list)  # Symptoms that matched the disease
+    treatment = models.JSONField(default=list)  # JSON list of treatment steps
+    prevention = models.JSONField(default=list)  # JSON list of prevention steps
+    medicines = models.JSONField(default=list)  # JSON list of recommended medicines/antibiotics
+    contagious = models.BooleanField(default=False)
+    all_results = models.JSONField(default=list)  # All diagnosis results (top 5)
+    notes = models.TextField(blank=True, null=True)
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('diagnosed', 'Diagnosed'),
+            ('treated', 'Treated'),
+            ('recovered', 'Recovered'),
+            ('pending', 'Pending')
+        ],
+        default='diagnosed'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', '-created_at']),
+            models.Index(fields=['disease_name']),
+            models.Index(fields=['status']),
+        ]
+        verbose_name = 'Symptom Diagnosis'
+        verbose_name_plural = 'Symptom Diagnoses'
+
+    def __str__(self):
+        return f"{self.animal_name or 'Unknown'} - {self.disease_name or 'N/A'} ({self.confidence_score*100:.1f}%)"

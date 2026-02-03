@@ -1,15 +1,38 @@
-django==5.2.7
-djangorestframework==3.16.1
-djangorestframework-simplejwt==5.5.1
-django-cors-headers==4.9.0
+# ============================================
+# Django & REST Framework
+# ============================================
+Django==5.2.4
+djangorestframework==3.16.0
+djangorestframework-simplejwt==5.3.1
+django-cors-headers==4.7.0
 django-environ==0.11.2
-python-dotenv==1.0.1
+
+# ============================================
+# Database
+# ============================================
 mysqlclient==2.2.7
-Pillow==12.0.0
+
+# ============================================
+# Environment & Configuration
+# ============================================
+python-dotenv==1.2.1
+
+# ============================================
+# Image Processing
+# ============================================
+Pillow==10.3.0
+opencv-python==4.8.1.78
+
+# ============================================
+# Machine Learning & Data Science
+# ============================================
 tensorflow==2.13.0
-opencv-python==4.10.1.26
-scikit-learn==1.5.0
-numpy==1.26.0
+numpy==2.2.6
 pandas==2.2.0
-scipy==1.13.0
-requests==2.31.0
+scikit-learn==1.7.1
+scipy==1.15.3
+
+# ============================================
+# HTTP & API
+# ============================================
+requests==2.32.5

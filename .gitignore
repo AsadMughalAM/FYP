@@ -1,0 +1,290 @@
+# ============================================
+# Python Virtual Environment
+# ============================================
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# ============================================
+# Python Cache & Compiled Files
+# ============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ============================================
+# Node.js / Frontend
+# ============================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+*.local
+
+# ============================================
+# Django / Backend
+# ============================================
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.db
+*.sqlite3
+*.sqlite
+db.sqlite3
+db.sqlite3-journal
+
+# Django migrations (optional - uncomment if you want to ignore migrations)
+# */migrations/*.py
+# !*/migrations/__init__.py
+
+# Django media files (user uploads - keep structure but ignore content)
+media/uploads/*
+!media/uploads/.gitkeep
+media/*.jpg
+media/*.jpeg
+media/*.png
+media/*.gif
+media/*.pdf
+
+# Django static files (if collected)
+staticfiles/
+static_root/
+
+# ============================================
+# Environment Variables & Secrets
+# ============================================
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+*.env
+secrets.json
+config.json
+.secrets/
+
+# ============================================
+# IDE & Editor Files
+# ============================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+# PyCharm
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# ============================================
+# OS Files
+# ============================================
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ============================================
+# Machine Learning / Model Files
+# ============================================
+# Large model files (uncomment if you don't want to track trained models)
+# server/ml_model/trained_models/*.h5
+# server/ml_model/trained_models/*.pkl
+# server/ml_model/trained_models/*.pb
+# server/ml_model/trained_models/*.tflite
+
+# Model checkpoints
+*.ckpt
+*.h5
+*.pb
+*.tflite
+checkpoints/
+logs/
+runs/
+wandb/
+
+# TensorBoard
+events.out.tfevents.*
+*.tfevents.*
+
+# ============================================
+# Dataset Files (Large Files)
+# ============================================
+# Uncomment if datasets are too large for Git
+# server/Cows datasets/**/*.jpg
+# server/Cows datasets/**/*.png
+# server/Cows datasets/**/*.JPG
+# server/Dataset/*.csv
+
+# Keep dataset structure but ignore large files
+# server/Cows datasets/*/
+# !server/Cows datasets/.gitkeep
+
+# ============================================
+# Testing & Coverage
+# ============================================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+nosetests.xml
+test-results/
+junit.xml
+
+# ============================================
+# Logs
+# ============================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# ============================================
+# Temporary Files
+# ============================================
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+.cache/
+tmp/
+temp/
+
+# ============================================
+# Package Manager Lock Files (Optional)
+# ============================================
+# Uncomment if you want to ignore lock files
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+# poetry.lock
+# Pipfile.lock
+
+# ============================================
+# Backup Files
+# ============================================
+*.backup
+*.old
+*.orig
+
+# ============================================
+# Project Specific
+# ============================================
+# Keep these patterns but ignore their content
+server/media/uploads/*
+!server/media/uploads/.gitkeep
+
+# Ignore large image files in media
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.tiff
+*.webp
+!public/**/*.jpg
+!public/**/*.png
+!public/**/*.svg
+
+# ============================================
+# Git LFS (if using)
+# ============================================
+.gitattributes

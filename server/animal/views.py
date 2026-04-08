@@ -114,9 +114,9 @@ class DiseaseDetectionModel:
                 print(f"⚠️ Could not patch Operation.from_config: {patch_error}")
                 pass
             
-            # Patch BatchNormalization to handle axis as list during deserialization
+            # Patch BatchNormalization/InputLayer for cross-version deserialization
             from tensorflow.keras.layers import BatchNormalization as OriginalBN
-            from tensorflow.keras.layers import Layer
+            from tensorflow.keras.layers import InputLayer as OriginalInputLayer
             
             # Create custom BatchNormalization class
             class FixedBatchNormalization(OriginalBN):
@@ -131,18 +131,54 @@ class DiseaseDetectionModel:
                         elif not isinstance(axis, (int, type(None))):
                             config['axis'] = -1
                     try:
-                        return super().from_config(config, custom_objects)
+                        if custom_objects is not None:
+                            try:
+                                return super().from_config(config, custom_objects)
+                            except TypeError:
+                                return super().from_config(config)
+                        return super().from_config(config)
                     except (TypeError, ValueError) as e:
                         # If still fails, try with default axis
                         if 'axis' in config:
                             config['axis'] = -1
-                        return super().from_config(config, custom_objects)
+                        if custom_objects is not None:
+                            try:
+                                return super().from_config(config, custom_objects)
+                            except TypeError:
+                                return super().from_config(config)
+                        return super().from_config(config)
+
+            class FixedInputLayer(OriginalInputLayer):
+                """Custom InputLayer that maps legacy batch_shape configs."""
+                @classmethod
+                def from_config(cls, config, custom_objects=None):
+                    if isinstance(config, dict) and 'batch_shape' in config:
+                        batch_shape = config.pop('batch_shape')
+                        if isinstance(batch_shape, (list, tuple)) and len(batch_shape) >= 1:
+                            batch_size = batch_shape[0]
+                            input_shape = tuple(batch_shape[1:]) if len(batch_shape) > 1 else ()
+                            if batch_size is not None:
+                                config['batch_size'] = batch_size
+                            if input_shape:
+                                config['input_shape'] = input_shape
+                    if custom_objects is not None:
+                        try:
+                            return super().from_config(config, custom_objects)
+                        except TypeError:
+                            return super().from_config(config)
+                    return super().from_config(config)
             
             # Register custom objects - use the fixed version
+            policy_class = tf.keras.mixed_precision.Policy
             custom_objects = {
                 'BatchNormalization': FixedBatchNormalization,
                 'keras.layers.BatchNormalization': FixedBatchNormalization,
                 'tensorflow.keras.layers.BatchNormalization': FixedBatchNormalization,
+                'InputLayer': FixedInputLayer,
+                'keras.layers.InputLayer': FixedInputLayer,
+                'tensorflow.keras.layers.InputLayer': FixedInputLayer,
+                'DTypePolicy': policy_class,
+                'keras.DTypePolicy': policy_class,
             }
             
             try:
@@ -157,9 +193,52 @@ class DiseaseDetectionModel:
             except Exception as e1:
                 error_str = str(e1)
                 print(f"⚠️ First load attempt failed: {error_str[:200]}...")
+
+                # Fallback: rebuild architecture from H5 JSON config after normalizing
+                # legacy keys (batch_shape, DTypePolicy) that break newer deserializers.
+                try:
+                    import h5py
+                    import json
+
+                    def _normalize_layer_config(node):
+                        if isinstance(node, dict):
+                            if node.get('class_name') == 'InputLayer' and isinstance(node.get('config'), dict):
+                                cfg = node['config']
+                                if 'batch_shape' in cfg:
+                                    batch_shape = cfg.pop('batch_shape')
+                                    if isinstance(batch_shape, (list, tuple)) and len(batch_shape) >= 1:
+                                        cfg['batch_input_shape'] = list(batch_shape)
+
+                            if node.get('class_name') == 'DTypePolicy':
+                                return 'float32'
+
+                            for k, v in list(node.items()):
+                                node[k] = _normalize_layer_config(v)
+                            return node
+
+                        if isinstance(node, list):
+                            return [_normalize_layer_config(item) for item in node]
+
+                        return node
+
+                    with h5py.File(str(model_path), 'r') as h5f:
+                        raw_model_config = h5f.attrs.get('model_config')
+                        if isinstance(raw_model_config, bytes):
+                            raw_model_config = raw_model_config.decode('utf-8')
+                        model_config = json.loads(raw_model_config)
+                        model_config = _normalize_layer_config(model_config)
+
+                    model_json = json.dumps(model_config)
+                    self._model = tf.keras.models.model_from_json(model_json, custom_objects=custom_objects)
+                    self._model.load_weights(str(model_path))
+                    print("✅ Model loaded successfully via normalized H5 config fallback")
+                except Exception as manual_load_error:
+                    print(f"⚠️ Manual H5 config fallback failed: {str(manual_load_error)[:200]}...")
                 
                 # Try alternative loading methods for version compatibility issues
-                if 'Operation.from_config' in error_str or 'takes 2 positional arguments but 3 were given' in error_str:
+                if self._model is not None:
+                    pass
+                elif 'Operation.from_config' in error_str or 'takes 2 positional arguments but 3 were given' in error_str:
                     print("🔄 Attempting alternative loading methods...")
                     
                     # Method 1: Try with tf.compat.v1 (if available)

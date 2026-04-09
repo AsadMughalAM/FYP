@@ -9,9 +9,7 @@ import requests
 from typing import Dict, Optional, List
 from datetime import datetime, timedelta
 
-# Gemini API Configuration
-# Can be overridden via environment variable GEMINI_API_KEY
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', 'AIzaSyCV5Jd3CLwVQKy9xQNM15EEQe1-UoC__eQ')
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '').strip()
 GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-flash-latest')
 
 # Try v1 API if v1beta doesn't work
@@ -49,6 +47,9 @@ def get_disease_info_from_gemini(disease_name: str) -> Optional[Dict]:
         Dictionary with disease information or None if API call fails
     """
     try:
+        if not GEMINI_API_KEY:
+            print('GEMINI_API_KEY is not set; add it to server/.env (see server/.env.example)')
+            return None
         # Convert disease name to readable format (handle any disease name dynamically)
         disease_key = disease_name.lower().strip().replace('_', '-').replace(' ', '-')
         
@@ -136,8 +137,7 @@ Return ONLY valid JSON starting with {{ and ending with }}. No other text."""
         
         print(f"🔍 Calling Gemini API for disease: {disease_name} -> {readable_name}")
         print(f"🔍 Model: {model}")
-        print(f"🔍 API Key: {GEMINI_API_KEY[:15]}...{GEMINI_API_KEY[-5:] if len(GEMINI_API_KEY) > 20 else ''}")
-        
+
         # Try v1beta API first, then v1 as fallback
         base_urls_to_try = [
             (GEMINI_API_BASE_URL_V1BETA, 'v1beta'),
@@ -174,7 +174,6 @@ Return ONLY valid JSON starting with {{ and ending with }}. No other text."""
                 elif response.status_code == 403:
                     print(f"❌ API Key invalid or permission denied (403)")
                     print(f"❌ Error: {response.text[:300]}")
-                    print(f"❌ Please verify your API key: {GEMINI_API_KEY[:20]}...")
                     return None
                 elif response.status_code == 429:
                     print(f"⚠️ Rate limit exceeded (429), waiting 2 seconds...")

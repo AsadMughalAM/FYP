@@ -92,6 +92,8 @@ static_root/
 .env.production
 .env.development
 *.env
+server/.env
+client/.env
 secrets.json
 config.json
 .secrets/

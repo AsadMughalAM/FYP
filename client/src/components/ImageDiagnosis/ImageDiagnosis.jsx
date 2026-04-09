@@ -287,9 +287,13 @@ const ImageDiagnosis = ({ onUploadSuccess }) => {
               <p className="text-xs text-red-800 mt-0.5">
                 {mutation.error?.response?.status === 401
                   ? "Authentication failed. Please sign in again."
-                  : mutation.error?.response?.data?.error ||
-                    mutation.error?.message ||
-                    "An error occurred during upload. Please try again."}
+                  : mutation.error?.response?.data?.gemini_error?.status
+                    ? `Gemini error (${mutation.error.response.data.gemini_error.status}): ${mutation.error.response.data.gemini_error.message || "Request failed"}`
+                    : mutation.error?.response?.data?.gemini_error?.message
+                      ? `Gemini error: ${mutation.error.response.data.gemini_error.message}`
+                      : mutation.error?.response?.data?.error ||
+                        mutation.error?.message ||
+                        "An error occurred during upload. Please try again."}
               </p>
               {mutation.error?.response?.status === 401 && (
                 <button

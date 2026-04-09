@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '').strip()
 GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-flash-latest')
+GEMINI_TIMEOUT_SECONDS = int(os.environ.get('GEMINI_TIMEOUT_SECONDS', '35'))
 
 # Try v1 API if v1beta doesn't work
 GEMINI_API_BASE_URL_V1BETA = 'https://generativelanguage.googleapis.com/v1beta'
@@ -48,8 +49,13 @@ def get_disease_info_from_gemini(disease_name: str) -> Optional[Dict]:
     """
     try:
         if not GEMINI_API_KEY:
-            print('GEMINI_API_KEY is not set; add it to server/.env (see server/.env.example)')
-            return None
+            return {
+                "_source": "gemini_error",
+                "gemini_error": {
+                    "type": "config",
+                    "message": "GEMINI_API_KEY is not set on the server.",
+                },
+            }
         # Convert disease name to readable format (handle any disease name dynamically)
         disease_key = disease_name.lower().strip().replace('_', '-').replace(' ', '-')
         
@@ -91,8 +97,8 @@ IMPORTANT JSON RULES:
 SPECIFIC GUIDELINES:
 - For healthy animals: severity="None", symptoms=["Normal appearance", "Good body condition", "Active behavior"], contagious=false
 - Be medically accurate with proper veterinary terminology
-- Include 3-6 items in each array
-- Keep each item concise and clear
+- Include exactly 3 items in each array: symptoms, treatment, prevention
+- Keep each item concise and clear (max 60 chars)
 - Treatment steps should be actionable
 - Prevention methods should be practical
 
@@ -110,7 +116,8 @@ Return ONLY valid JSON starting with {{ and ending with }}. No other text."""
                 "temperature": 0.3,
                 "topK": 40,
                 "topP": 0.95,
-                "maxOutputTokens": 2048,  # Increased to prevent truncation
+                "maxOutputTokens": 1024,
+                "responseMimeType": "application/json",
             },
             "safetySettings": [
                 {
@@ -132,75 +139,111 @@ Return ONLY valid JSON starting with {{ and ending with }}. No other text."""
             ],
         }
 
-        # Use only gemini-flash-latest model
-        model = GEMINI_MODEL
+        # Try primary model first, then any optional fallback models from env.
+        fallback_models_raw = os.environ.get('GEMINI_FALLBACK_MODELS', '')
+        fallback_models = [
+            m.strip() for m in fallback_models_raw.split(',') if m.strip()
+        ]
+        models_to_try = [GEMINI_MODEL, *fallback_models]
         
         print(f"🔍 Calling Gemini API for disease: {disease_name} -> {readable_name}")
-        print(f"🔍 Model: {model}")
+        print(f"🔍 Model candidates: {models_to_try}")
 
-        # Try v1beta API first, then v1 as fallback
-        base_urls_to_try = [
-            (GEMINI_API_BASE_URL_V1BETA, 'v1beta'),
-            (GEMINI_API_BASE_URL_V1, 'v1')
-        ]
-        
         response = None
         successful_version = None
-        
-        for base_url, version in base_urls_to_try:
+        successful_model = None
+        last_error = None
+
+        for model in models_to_try:
+            # Try v1beta API first, then v1 as fallback
+            base_urls_to_try = [(GEMINI_API_BASE_URL_V1BETA, 'v1beta')]
+            # The "latest" alias is generally resolved on v1beta.
+            if not model.endswith('-latest'):
+                base_urls_to_try.append((GEMINI_API_BASE_URL_V1, 'v1'))
+
+            for base_url, version in base_urls_to_try:
+                url = f"{base_url}/models/{model}:generateContent?key={GEMINI_API_KEY}"
+                print(f"🔍 Trying {model} with {version} API...")
+
+                try:
+                    response = requests.post(
+                        url,
+                        json=request_body,
+                        headers={"Content-Type": "application/json"},
+                        timeout=GEMINI_TIMEOUT_SECONDS
+                    )
+
+                    if response.status_code == 200:
+                        successful_model = model
+                        successful_version = version
+                        print(f"✅ Successfully connected to Gemini API!")
+                        print(f"✅ Working Model: {model}, API Version: {version}")
+                        break
+                    elif response.status_code == 404:
+                        print(f"⚠️ Model '{model}' not found in {version} API")
+                        last_error = {
+                            "type": "model_not_found",
+                            "status": 404,
+                            "message": f"Model '{model}' not found on {version}.",
+                        }
+                        response = None
+                        continue
+                    elif response.status_code == 403:
+                        print(f"❌ API Key invalid or permission denied (403)")
+                        print(f"❌ Error: {response.text[:300]}")
+                        return {
+                            "_source": "gemini_error",
+                            "gemini_error": {
+                                "type": "permission_denied",
+                                "status": 403,
+                                "message": (response.text or "")[:300],
+                            },
+                        }
+                    elif response.status_code == 429:
+                        print(f"⚠️ Rate limit exceeded (429), waiting 2 seconds...")
+                        last_error = {
+                            "type": "rate_limited",
+                            "status": 429,
+                            "message": "Rate limit exceeded (429).",
+                            "retry_after_seconds": 2,
+                        }
+                        import time
+                        time.sleep(2)
+                        response = None
+                        continue
+                    else:
+                        print(f"⚠️ {version} API returned {response.status_code}")
+                        print(f"⚠️ Error: {response.text[:300]}")
+                        last_error = {
+                            "type": "http_error",
+                            "status": response.status_code,
+                            "message": (response.text or "")[:300],
+                        }
+                        response = None
+                        continue
+
+                except requests.exceptions.Timeout:
+                    print(f"⚠️ Request timed out for {model} ({version})")
+                    last_error = {"type": "timeout", "message": f"Request timed out for {model}."}
+                    response = None
+                    continue
+                except requests.exceptions.RequestException as e:
+                    print(f"⚠️ Request failed for {model} ({version}): {e}")
+                    last_error = {"type": "network", "message": str(e)}
+                    response = None
+                    continue
+
             if response and response.status_code == 200:
                 break
-                
-            url = f"{base_url}/models/{model}:generateContent?key={GEMINI_API_KEY}"
-            print(f"🔍 Trying {model} with {version} API...")
-            
-            try:
-                response = requests.post(
-                    url,
-                    json=request_body,
-                    headers={"Content-Type": "application/json"},
-                    timeout=20
-                )
-                
-                if response.status_code == 200:
-                    successful_version = version
-                    print(f"✅ Successfully connected to Gemini API!")
-                    print(f"✅ Working Model: {model}, API Version: {version}")
-                    break
-                elif response.status_code == 404:
-                    print(f"⚠️ Model '{model}' not found in {version} API")
-                    response = None
-                    continue
-                elif response.status_code == 403:
-                    print(f"❌ API Key invalid or permission denied (403)")
-                    print(f"❌ Error: {response.text[:300]}")
-                    return None
-                elif response.status_code == 429:
-                    print(f"⚠️ Rate limit exceeded (429), waiting 2 seconds...")
-                    import time
-                    time.sleep(2)
-                    response = None
-                    continue
-                else:
-                    print(f"⚠️ {version} API returned {response.status_code}")
-                    print(f"⚠️ Error: {response.text[:300]}")
-                    response = None
-                    continue
-                    
-            except requests.exceptions.Timeout:
-                print(f"⚠️ Request timed out for {model} ({version})")
-                response = None
-                continue
-            except requests.exceptions.RequestException as e:
-                print(f"⚠️ Request failed for {model} ({version}): {e}")
-                response = None
-                continue
-        
+
         if not response or response.status_code != 200:
             print(f"❌ Gemini API call failed")
-            print(f"❌ Model: {model}")
-            print(f"❌ Tried API versions: v1beta, v1")
-            return None
+            print(f"❌ Tried models: {models_to_try}")
+            return {
+                "_source": "gemini_error",
+                "gemini_error": last_error
+                or {"type": "unknown", "message": "Gemini API call failed."},
+            }
 
         # Parse response
         data = response.json()
@@ -313,10 +356,16 @@ Return ONLY valid JSON starting with {{ and ending with }}. No other text."""
 
     except requests.exceptions.RequestException as e:
         print(f"⚠️ Network error calling Gemini API: {e}")
-        return None
+        return {
+            "_source": "gemini_error",
+            "gemini_error": {"type": "network", "message": str(e)},
+        }
     except Exception as e:
         print(f"⚠️ Error fetching disease info from Gemini: {e}")
-        return None
+        return {
+            "_source": "gemini_error",
+            "gemini_error": {"type": "unknown", "message": str(e)},
+        }
 
 
 def get_disease_info(disease_name: str, use_cache: bool = False, force_fresh: bool = True) -> Dict:
@@ -346,6 +395,8 @@ def get_disease_info(disease_name: str, use_cache: bool = False, force_fresh: bo
     gemini_info = get_disease_info_from_gemini(disease_key)
     
     if gemini_info:
+        if gemini_info.get("_source") == "gemini_error":
+            return gemini_info
         # Cache the result (but next call will still be fresh if force_fresh=True)
         if use_cache:
             _disease_info_cache[disease_key] = gemini_info
@@ -360,43 +411,19 @@ def get_disease_info(disease_name: str, use_cache: bool = False, force_fresh: bo
     gemini_info_retry = get_disease_info_from_gemini(disease_key)
     
     if gemini_info_retry:
+        if gemini_info_retry.get("_source") == "gemini_error":
+            return gemini_info_retry
         if use_cache:
             _disease_info_cache[disease_key] = gemini_info_retry
             _cache_timestamps[disease_key] = datetime.now()
         print(f"✅ Successfully received real-time data from Gemini (after retry) for: {disease_name}")
         return gemini_info_retry
-    
-    # Only fallback to JSON as last resort if Gemini completely fails
-    print(f"⚠️⚠️ Gemini API failed completely. Falling back to JSON for: {disease_name}")
-    print(f"⚠️⚠️ This is NOT real-time data - please check Gemini API connection")
-    disease_info = load_disease_info_fallback()
-    
-    # Try to find in JSON
-    if disease_key in disease_info:
-        info = disease_info[disease_key]
-        info['_source'] = 'json_fallback'  # Mark as fallback data
-        print(f"⚠️ Using JSON fallback data for: {disease_name}")
-        return info
-    
-    # Try normalized versions
-    normalized_key = disease_key.replace('_', '-')
-    if normalized_key in disease_info:
-        info = disease_info[normalized_key]
-        info['_source'] = 'json_fallback'  # Mark as fallback data
-        print(f"⚠️ Using JSON fallback data (normalized) for: {disease_name}")
-        return info
-    
-    # Return default structure if nothing found
-    print(f"❌ Disease info not found anywhere for: {disease_name}, using defaults")
-    default_info = {
-        "name": disease_name.replace('-', ' ').title(),
-        "severity": "Unknown",
-        "symptoms": [],
-        "treatment": ["Consult a veterinarian for proper diagnosis and treatment"],
-        "prevention": ["Maintain good animal health practices"],
-        "contagious": False,
-        "antibiotics": [],
-        "_source": "default"
+
+    return {
+        "_source": "gemini_error",
+        "gemini_error": {
+            "type": "unknown",
+            "message": "Gemini API returned no data after retry.",
+        },
     }
-    return default_info
 

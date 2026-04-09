@@ -473,32 +473,30 @@ class DetectAnimalAPIView(APIView):
             print(f"")
             print(f"🔄🔄🔄 STARTING REAL-TIME GEMINI API CALL 🔄🔄🔄")
             print(f"🔄 Disease: {normalized_name}")
-            print(f"🔄 API Key: {GEMINI_API_KEY[:15]}...{GEMINI_API_KEY[-5:] if len(GEMINI_API_KEY) > 20 else ''}")
             print(f"🔄 Model: {GEMINI_MODEL}")
             print(f"")
             
             info = get_disease_info(normalized_name, use_cache=False, force_fresh=True)
+            if not info:
+                return Response(
+                    {
+                        "error": "Disease info unavailable",
+                        "message": "Unable to fetch disease information at this time. Please try again."
+                    },
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE
+                )
             
             # Log the data source for debugging BEFORE removing it
             data_source = info.get('_source', 'unknown')
             
-            # CRITICAL: If using JSON fallback, DO NOT SAVE - return error instead
-            if data_source == 'json_fallback':
-                print(f"")
-                print(f"❌❌❌ CRITICAL ERROR ❌❌❌")
-                print(f"❌ Gemini API FAILED - Cannot use JSON fallback!")
-                print(f"❌ Disease: {normalized_name}")
-                print(f"❌ This means UI will show OLD data from JSON file")
-                print(f"❌ Please check Gemini API configuration")
-                print(f"")
-                # Return error instead of saving JSON fallback
+            if data_source == 'gemini_error':
                 return Response(
                     {
                         "error": "Gemini API failed",
-                        "message": "Unable to fetch real-time disease information. Please check Gemini API configuration and try again.",
-                        "details": "The system requires real-time data from Gemini API. JSON fallback is disabled to ensure data accuracy."
+                        "message": "Real-time disease information is unavailable right now.",
+                        "gemini_error": info.get("gemini_error"),
                     },
-                    status=status.HTTP_503_SERVICE_UNAVAILABLE
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
                 )
             elif data_source == 'gemini_api':
                 print(f"")
@@ -510,15 +508,7 @@ class DetectAnimalAPIView(APIView):
                 print(f"✅ This is FRESH data from Gemini API, NOT from JSON file")
                 print(f"")
             else:
-                print(f"⚠️ Unknown data source: {data_source}")
-                # If unknown source, also reject it
-                return Response(
-                    {
-                        "error": "Unknown data source",
-                        "message": "Unable to verify data source. Please try again."
-                    },
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
+                print(f"⚠️ Unknown data source: {data_source} (continuing)")
             
             # Remove internal field before saving
             info.pop('_source', None)
@@ -570,10 +560,16 @@ class DetectAnimalAPIView(APIView):
                 "success": True,
                 "message": "Disease detected successfully",
                 "data": serializer.data,
-                "data_source": "gemini_api_realtime",  # Indicate this is real-time Gemini data
+                "data_source": "gemini_api_realtime" if data_source == "gemini_api" else "json_fallback",
                 "timestamp": detection.created_at.isoformat()
             }
             
+            if data_source != "gemini_api":
+                response_data["warning"] = (
+                    "Real-time disease info (Gemini) is temporarily unavailable. "
+                    "Showing fallback data instead."
+                )
+
             # Add warning if confidence is too low
             if prediction.get('model_warning', False) or prediction['confidence'] < 0.4:
                 response_data["warning"] = (

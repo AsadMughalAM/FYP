@@ -270,6 +270,12 @@ temp/
 # ============================================
 # Project Specific
 # ============================================
+GIT_CLEANUP.md
+INSTALL.md
+PROJECT_ANALYSIS.md
+setup.ps1
+setup.sh
+
 # Keep these patterns but ignore their content
 server/media/uploads/*
 !server/media/uploads/.gitkeep

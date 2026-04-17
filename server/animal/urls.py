@@ -8,7 +8,8 @@ from .views import (
     DiagnoseAPIView,
     DiseaseDetailAPIView,
     SymptomDiagnosisHistoryAPIView,
-    SymptomDiagnosisDetailAPIView
+    SymptomDiagnosisDetailAPIView,
+    VetChatAPIView,
 )
 
 urlpatterns = [
@@ -21,4 +22,5 @@ urlpatterns = [
     path('diseases/<str:disease_id>/', DiseaseDetailAPIView.as_view(), name='disease-detail'),
     path('symptom-diagnosis/history/', SymptomDiagnosisHistoryAPIView.as_view(), name='symptom-diagnosis-history'),
     path('symptom-diagnosis/<int:diagnosis_id>/', SymptomDiagnosisDetailAPIView.as_view(), name='symptom-diagnosis-detail'),
+    path('vetchat/', VetChatAPIView.as_view(), name='vetchat'),
 ]

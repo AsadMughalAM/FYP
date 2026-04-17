@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import axios from "axios";
-import { getGeminiApiUrl, getListModelsUrl, GEMINI_MODEL } from "../../config/gemini";
+import API_BASE_URL, { getAuthHeaders } from "../../config/api";
 
 const VetChat = () => {
   const STORAGE_KEY = "vet_chat_history";
@@ -46,7 +46,7 @@ const VetChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const saveChatHistory = () => {
+  const saveChatHistory = useCallback(() => {
     try {
       const serialized = messages.map(msg => ({
         ...msg,
@@ -56,7 +56,7 @@ const VetChat = () => {
     } catch (error) {
       console.error("Error saving chat history:", error);
     }
-  };
+  }, [messages]);
 
   const clearChatHistory = () => {
     const initialMessage = [
@@ -80,282 +80,47 @@ const VetChat = () => {
       }));
   };
 
-  const buildSystemPrompt = () => {
-    return `You are a professional veterinary assistant providing expert guidance on animal health and wellness. 
-
-IMPORTANT GUIDELINES:
-- Always respond formally, politely, and professionally
-- Provide accurate, evidence-based information about animal health
-- For serious or emergency symptoms, always recommend consulting a licensed veterinarian immediately
-- Be empathetic and understanding in your responses
-- Avoid making definitive diagnoses - instead, provide general guidance and recommend professional veterinary consultation
-- Use clear, professional language that is accessible to pet owners
-- If asked about specific medications or treatments, always recommend consulting a veterinarian for proper dosing and administration
-- Stay within your knowledge domain - if unsure, recommend consulting a professional
-
-Your responses should be helpful, informative, and prioritize animal welfare and safety.`;
-  };
-
-  const sendMessageToGemini = async (userMessage, conversationHistory, modelName = GEMINI_MODEL) => {
-    const systemPrompt = buildSystemPrompt();
-    const apiUrl = getGeminiApiUrl(modelName);
-    
-    console.log("Calling Gemini API:", {
-      url: apiUrl.replace(/key=[^&]+/, 'key=***'), // Mask API key in logs
-      model: modelName,
-    });
-    
+  const sendMessageToServer = async (userMessage, conversationHistory) => {
+    const apiUrl = `${API_BASE_URL}/animal/vetchat/`;
     const requestBody = {
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: systemPrompt }],
-        },
-        ...conversationHistory,
-        {
-          role: "user",
-          parts: [{ text: userMessage }],
-        },
-      ],
-      generationConfig: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 1024,
-      },
-      safetySettings: [
-        {
-          category: "HARM_CATEGORY_HARASSMENT",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE",
-        },
-        {
-          category: "HARM_CATEGORY_HATE_SPEECH",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE",
-        },
-        {
-          category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE",
-        },
-        {
-          category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE",
-        },
-      ],
+      message: userMessage,
+      history: conversationHistory,
     };
 
-    const response = await axios.post(
-      apiUrl,
-      requestBody,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        timeout: 30000,
-      }
-    );
-    
-    console.log("Gemini API Response:", {
-      status: response.status,
-      hasCandidates: !!response.data?.candidates,
-    });
-
-      if (
-        response.data &&
-        response.data.candidates &&
-        response.data.candidates.length > 0
-      ) {
-        const candidate = response.data.candidates[0];
-        if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
-          return candidate.content.parts[0].text;
-        }
-      }
-
-    if (
-      response.data &&
-      response.data.candidates &&
-      response.data.candidates.length > 0
-    ) {
-      const candidate = response.data.candidates[0];
-      if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
-        return candidate.content.parts[0].text;
-      }
-    }
-
-    throw new Error("Unexpected response format from Gemini API");
-  };
-
-  const listAvailableModels = async () => {
     try {
-      const response = await axios.get(getListModelsUrl(), {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        timeout: 10000,
+      const response = await axios.post(apiUrl, requestBody, {
+        headers: getAuthHeaders(),
+        timeout: 35000,
       });
-      
-      if (response.data && response.data.models) {
-        const availableModels = response.data.models
-          .filter(model => model.supportedGenerationMethods?.includes('generateContent'))
-          .map(model => model.name.replace('models/', ''));
-        
-        console.log("Available models:", availableModels);
-        return availableModels;
+
+      if (response.data?.reply) {
+        return response.data.reply;
       }
-      return [];
+      throw new Error("Unexpected response format from server.");
     } catch (error) {
-      console.error("Error listing models:", error);
-      return [];
-    }
-  };
-
-  const prioritizeStableModels = (models) => {
-    // Preferred stable models in order of preference
-    const preferredModels = [
-      'gemini-2.5-flash',
-      'gemini-2.0-flash',
-      'gemini-flash-latest',
-      'gemini-pro-latest',
-      'gemini-2.5-pro',
-      'gemini-2.0-pro-exp',
-    ];
-    
-    const stable = [];
-    const preview = [];
-    const experimental = [];
-    
-    models.forEach(model => {
-      if (preferredModels.includes(model)) {
-        stable.push(model);
-      } else if (model.includes('preview') || model.includes('Preview')) {
-        preview.push(model);
-      } else if (model.includes('exp') || model.includes('experimental')) {
-        experimental.push(model);
-      } else {
-        stable.push(model);
-      }
-    });
-    
-    // Sort preferred models to front
-    stable.sort((a, b) => {
-      const aIndex = preferredModels.indexOf(a);
-      const bIndex = preferredModels.indexOf(b);
-      if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
-      if (aIndex !== -1) return -1;
-      if (bIndex !== -1) return 1;
-      return 0;
-    });
-    
-    return [...stable, ...preview, ...experimental];
-  };
-
-  const sendMessageWithFallback = async (userMessage, conversationHistory) => {
-    // First, try to get available models
-    const availableModels = await listAvailableModels();
-    
-    // Prioritize stable models, filter out preview/experimental if we have stable ones
-    let modelsToTry;
-    if (availableModels.length > 0) {
-      const prioritized = prioritizeStableModels(availableModels);
-      
-      // Filter to only stable, non-preview models
-      const stableOnly = prioritized.filter(m => 
-        !m.includes('preview') && 
-        !m.includes('Preview') && 
-        !m.includes('exp') &&
-        !m.includes('experimental') &&
-        !m.includes('thinking') &&
-        !m.includes('tts') &&
-        !m.includes('image') &&
-        !m.includes('computer-use') &&
-        !m.includes('lite') &&
-        !m.includes('learnlm') &&
-        !m.includes('gemma') &&
-        !m.includes('nano') &&
-        !m.includes('robotics')
-      );
-      
-      // Use stable models, limit to top 3 to avoid rate limits
-      modelsToTry = stableOnly.length > 0 
-        ? stableOnly.slice(0, 3)
-        : ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest'];
-    } else {
-      modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest'];
-    }
-    
-    console.log("Trying models in order:", modelsToTry);
-    
-    let lastError = null;
-
-    for (const model of modelsToTry) {
-      try {
-        return await sendMessageToGemini(userMessage, conversationHistory, model);
-      } catch (error) {
-        console.error(`Error with model ${model}:`, error);
-        lastError = error;
-        
-        // For 429 errors, don't try other models - wait instead
-        if (error.response?.status === 429) {
-          throw error;
-        }
-        
-        if (error.response?.status === 404) {
-          continue;
-        }
-        
-        // For other errors, continue to next model
-        continue;
-      }
-    }
-
-    throw lastError || new Error("All model attempts failed. Please check your API key has access to Gemini models.");
-  };
-
-  const sendMessageToGeminiHandler = async (userMessage, conversationHistory) => {
-    try {
-      return await sendMessageWithFallback(userMessage, conversationHistory);
-    } catch (error) {
-      console.error("Gemini API error:", error);
+      console.error("VetChat API error:", error);
       
       if (error.response) {
         const status = error.response.status;
         const data = error.response.data;
         
-        if (status === 404) {
-          const errorMsg = data?.error?.message || "Resource not found";
-          throw new Error(
-            `API endpoint not found (404). ${errorMsg}. Please verify: 1) Your API key is valid and has Generative AI API enabled, 2) The API key has access to Gemini models in Google Cloud Console, 3) Check the browser console for available models.`
-          );
+        if (status === 401) {
+          throw new Error("Session expired. Please log in again.");
         } else if (status === 400) {
-          throw new Error(
-            data.error?.message || "Invalid request. Please try rephrasing your question."
-          );
-        } else if (status === 403) {
-          throw new Error(
-            "API access denied. Please check your API key configuration and ensure it has the necessary permissions."
-          );
+          throw new Error(data?.error || "Invalid request. Please try again.");
         } else if (status === 429) {
-          const retryAfter = error.response.headers?.['retry-after'] || error.response.headers?.['Retry-After'];
+          const retryAfter = error.response.headers?.['retry-after'] || error.response.headers?.['Retry-After'] || "a short while";
           const waitTime = retryAfter ? `${retryAfter} seconds` : "a few moments";
-          throw new Error(
-            `Rate limit exceeded (429). Please wait ${waitTime} before trying again. Your API key may have hit the request limit.`
-          );
+          throw new Error(`Rate limit exceeded. Please wait ${waitTime} before trying again.`);
         } else if (status >= 500) {
-          throw new Error(
-            "Service temporarily unavailable. Please try again later."
-          );
+          throw new Error(data?.error || "Service temporarily unavailable. Please try again later.");
         } else {
-          throw new Error(
-            data.error?.message || `API error (${status}). Please try again later.`
-          );
+          throw new Error(data?.error || `API error (${status}). Please try again later.`);
         }
       } else if (error.request) {
-        throw new Error(
-          "Unable to connect to the service. Please check your internet connection."
-        );
+        throw new Error("Unable to connect to the service. Please check your internet connection.");
       } else if (error.code === "ECONNABORTED") {
-        throw new Error(
-          "Request timed out. Please try again."
-        );
+        throw new Error("Request timed out. Please try again.");
       }
       
       throw error;
@@ -382,7 +147,7 @@ Your responses should be helpful, informative, and prioritize animal welfare and
 
     try {
       const conversationHistory = formatConversationHistory(messages);
-      const aiResponse = await sendMessageToGeminiHandler(userMessageText, conversationHistory);
+      const aiResponse = await sendMessageToServer(userMessageText, conversationHistory);
 
       const botMessage = {
         id: Date.now() + 1,
@@ -428,7 +193,7 @@ Your responses should be helpful, informative, and prioritize animal welfare and
 
     try {
       const conversationHistory = formatConversationHistory(messages);
-      const aiResponse = await sendMessageToGeminiHandler(question, conversationHistory);
+      const aiResponse = await sendMessageToServer(question, conversationHistory);
 
       const botMessage = {
         id: Date.now() + 1,

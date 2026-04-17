@@ -7,8 +7,10 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 from animal.views import SymptomsAPIView, DiagnoseAPIView, DiseaseDetailAPIView
+from .views import healthcheck
 
 urlpatterns = [
+    path('health/', healthcheck, name='healthcheck'),
     path('admin/', admin.site.urls),
     path('api/', include('accounts.urls')),
     path('api/animal/', include('animal.urls')),

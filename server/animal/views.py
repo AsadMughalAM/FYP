@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+import requests
 from .models import AnimalDetection
 from .serializers import AnimalDetectionSerializer
 import json
@@ -14,6 +15,13 @@ from pathlib import Path
 
 # Import Gemini service for dynamic disease information
 from .gemini_service import get_disease_info
+from .gemini_service import (
+    GEMINI_API_KEY,
+    GEMINI_MODEL,
+    GEMINI_TIMEOUT_SECONDS,
+    GEMINI_API_BASE_URL_V1BETA,
+    GEMINI_API_BASE_URL_V1,
+)
 
 class DiseaseDetectionModel:
     """Wrapper for ML model prediction"""
@@ -63,14 +71,27 @@ class DiseaseDetectionModel:
             return  # Model already loaded
         
         try:
-            model_path = Path(settings.BASE_DIR) / 'ml_model' / 'trained_models' / 'cow_disease_detector.h5'
+            h5_model_path = Path(settings.BASE_DIR) / 'ml_model' / 'trained_models' / 'cow_disease_detector.h5'
+            saved_model_path = Path(settings.BASE_DIR) / 'ml_model' / 'trained_models' / 'cow_disease_detector_savedmodel'
             classes_path = Path(settings.BASE_DIR) / 'ml_model' / 'trained_models' / 'cow_disease_detector_classes.pkl'
-            
-            print(f"🔍 Looking for model at: {model_path.resolve()}")
+
+            model_path = None
+            if os.path.exists(h5_model_path):
+                model_path = h5_model_path
+                print(f"🔍 Using H5 model: {h5_model_path.resolve()}")
+            elif os.path.exists(saved_model_path):
+                model_path = saved_model_path
+                print(f"🔍 Using SavedModel directory: {saved_model_path.resolve()}")
+
+            print(f"🔍 Looking for H5 model at: {h5_model_path.resolve()}")
+            print(f"🔍 Looking for SavedModel at: {saved_model_path.resolve()}")
             print(f"🔍 Looking for classes at: {classes_path.resolve()}")
             
-            if not os.path.exists(model_path):
-                error_msg = f"Model file not found at: {model_path.resolve()}"
+            if model_path is None:
+                error_msg = (
+                    f"Model file not found. Expected one of: "
+                    f"{h5_model_path.resolve()} or {saved_model_path.resolve()}"
+                )
                 print(f"❌ {error_msg}")
                 raise FileNotFoundError(error_msg)
             
@@ -197,6 +218,9 @@ class DiseaseDetectionModel:
                 # Fallback: rebuild architecture from H5 JSON config after normalizing
                 # legacy keys (batch_shape, DTypePolicy) that break newer deserializers.
                 try:
+                    if not str(model_path).lower().endswith('.h5'):
+                        raise ValueError("H5-only fallback skipped for non-H5 model format.")
+
                     import h5py
                     import json
 
@@ -1044,6 +1068,120 @@ class SymptomDiagnosisDetailAPIView(APIView):
                 {"success": False, "error": "Diagnosis not found"},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+
+class VetChatAPIView(APIView):
+    """Secure server-side Gemini chat proxy for VetChat UI."""
+
+    permission_classes = [IsAuthenticated]
+
+    @staticmethod
+    def _build_system_prompt():
+        return (
+            "You are a professional veterinary assistant providing expert guidance on "
+            "animal health and wellness.\n\n"
+            "IMPORTANT GUIDELINES:\n"
+            "- Always respond formally, politely, and professionally\n"
+            "- Provide accurate, evidence-based information about animal health\n"
+            "- For serious or emergency symptoms, recommend consulting a licensed veterinarian immediately\n"
+            "- Be empathetic and understanding in your responses\n"
+            "- Avoid definitive diagnoses; provide general guidance and suggest professional consultation\n"
+            "- Use clear language accessible to pet owners\n"
+            "- For medications/treatments, advise veterinarian consultation for dosing\n"
+            "- If unsure, clearly say so and suggest consulting a professional\n\n"
+            "Keep responses concise, practical, and safety-first."
+        )
+
+    def post(self, request):
+        user_message = (request.data.get("message") or "").strip()
+        history = request.data.get("history", [])
+
+        if not user_message:
+            return Response(
+                {"error": "Message is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not GEMINI_API_KEY:
+            return Response(
+                {"error": "Server Gemini API key is not configured"},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        normalized_history = []
+        if isinstance(history, list):
+            for item in history[-10:]:
+                role = item.get("role") if isinstance(item, dict) else None
+                text = item.get("text") if isinstance(item, dict) else None
+                if role in ("user", "model") and isinstance(text, str) and text.strip():
+                    normalized_history.append(
+                        {"role": role, "parts": [{"text": text.strip()}]}
+                    )
+
+        request_body = {
+            "contents": [
+                {"role": "user", "parts": [{"text": self._build_system_prompt()}]},
+                *normalized_history,
+                {"role": "user", "parts": [{"text": user_message}]},
+            ],
+            "generationConfig": {
+                "temperature": 0.7,
+                "topK": 40,
+                "topP": 0.95,
+                "maxOutputTokens": 1024,
+            },
+        }
+
+        fallback_models_raw = os.environ.get("GEMINI_FALLBACK_MODELS", "")
+        fallback_models = [m.strip() for m in fallback_models_raw.split(",") if m.strip()]
+        models_to_try = [GEMINI_MODEL, *fallback_models]
+
+        last_error = None
+        for model in models_to_try:
+            base_urls_to_try = [(GEMINI_API_BASE_URL_V1BETA, "v1beta")]
+            if not model.endswith("-latest"):
+                base_urls_to_try.append((GEMINI_API_BASE_URL_V1, "v1"))
+
+            for base_url, _version in base_urls_to_try:
+                url = f"{base_url}/models/{model}:generateContent?key={GEMINI_API_KEY}"
+                try:
+                    response = requests.post(
+                        url,
+                        json=request_body,
+                        headers={"Content-Type": "application/json"},
+                        timeout=GEMINI_TIMEOUT_SECONDS,
+                    )
+
+                    if response.status_code != 200:
+                        last_error = response.text[:300]
+                        continue
+
+                    data = response.json()
+                    candidates = data.get("candidates") or []
+                    if not candidates:
+                        last_error = "Gemini returned no candidates"
+                        continue
+
+                    parts = candidates[0].get("content", {}).get("parts", [])
+                    if not parts or "text" not in parts[0]:
+                        last_error = "Gemini returned unexpected response format"
+                        continue
+
+                    return Response(
+                        {
+                            "reply": parts[0]["text"].strip(),
+                            "model": model,
+                        },
+                        status=status.HTTP_200_OK,
+                    )
+                except requests.exceptions.RequestException as exc:
+                    last_error = str(exc)
+                    continue
+
+        return Response(
+            {"error": "Gemini chat request failed", "details": last_error},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
     
     def patch(self, request, diagnosis_id):
         """Update symptom diagnosis status and notes"""

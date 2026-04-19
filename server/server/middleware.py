@@ -12,15 +12,12 @@ class ForceCorsMiddleware:
         else:
             response = self.get_response(request)
         
-        # Get origin from request, fallback to wildcard
-        origin = request.headers.get('Origin', '*')
-        
-        # Always add CORS headers to ALL responses
-        response['Access-Control-Allow-Origin'] = origin
+        # STRICTLY allow all origins and hosts - bypass Django's host check
+        response['Access-Control-Allow-Origin'] = '*'
         response['Access-Control-Allow-Credentials'] = 'true'
         response['Access-Control-Allow-Methods'] = 'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD'
-        response['Access-Control-Allow-Headers'] = 'Origin, Content-Type, Accept, Authorization, X-Requested-With, X-CSRFToken, enctype, multipart/form-data, application/json'
+        response['Access-Control-Allow-Headers'] = '*'
         response['Access-Control-Max-Age'] = '3600'
-        response['Access-Control-Expose-Headers'] = 'Content-Type, Authorization'
+        response['Access-Control-Expose-Headers'] = '*'
         
         return response

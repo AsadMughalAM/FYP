@@ -164,32 +164,19 @@ SIMPLE_JWT = {
 
 # CORS Configuration
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins for flexibility
 
-# Always allow these origins for flexibility
 CORS_ALLOWED_ORIGINS = [
     'https://fyp-two-bice.vercel.app',
     'http://localhost:5173',
     'http://localhost:3000',
 ]
 
-# Add any additional origins from environment variable
-if os.environ.get('CORS_ALLOWED_ORIGINS'):
-    additional_origins = [url.strip() for url in os.environ.get('CORS_ALLOWED_ORIGINS').split(',')]
-    CORS_ALLOWED_ORIGINS.extend(additional_origins)
-
-# If DEBUG is True, allow all origins (development mode)
-if DEBUG:
-    CORS_ALLOW_ALL_ORIGINS = True
-
 CSRF_TRUSTED_ORIGINS = [
     'https://fyp-two-bice.vercel.app',
     'http://localhost:5173',
     'http://localhost:3000',
 ]
-
-if os.environ.get('CSRF_TRUSTED_ORIGINS'):
-    additional_csrf = [url.strip() for url in os.environ.get('CSRF_TRUSTED_ORIGINS').split(',')]
-    CSRF_TRUSTED_ORIGINS.extend(additional_csrf)
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = not DEBUG

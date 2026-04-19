@@ -56,6 +56,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'server.middleware.ForceCorsMiddleware',  # Our custom CORS FIRST - before anything else
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -63,7 +64,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'server.middleware.ForceCorsMiddleware',
 ]
 
 ROOT_URLCONF = 'server.urls'
@@ -163,20 +163,23 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
 }
 
-# CORS Configuration
+# CORS Configuration - FORCE ALL ORIGINS for production
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins for flexibility
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_EXPOSE_HEADERS = ['Content-Type', 'Authorization']
 
 CORS_ALLOWED_ORIGINS = [
     'https://fyp-two-bice.vercel.app',
     'http://localhost:5173',
     'http://localhost:3000',
+    'https://*.vercel.app',
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     'https://fyp-two-bice.vercel.app',
     'http://localhost:5173',
     'http://localhost:3000',
+    'https://*.vercel.app',
 ]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

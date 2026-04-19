@@ -32,7 +32,7 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = os.environ.get(
     'ALLOWED_HOSTS',
-    'localhost,127.0.0.1,content-possibility.up.railway.app,.railway.app'
+    'localhost,127.0.0.1,content-possibility.up.railway.app,.railway.app,content-possibility-production-1d92.up.railway.app'
 ).split(',')
 
 

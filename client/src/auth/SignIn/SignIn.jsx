@@ -11,9 +11,14 @@ const SignIn = () => {
   const [apiError, setApiError] = useState(null);
   const { register, handleSubmit, formState: { errors } } = useForm();
 
+  // Debug logging
+  console.log("VITE_API_BASE_URL:", import.meta.env.VITE_API_BASE_URL);
+  console.log("VITE_GOOGLE_CLIENT_ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID);
+
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://content-possibility.up.railway.app/api';
+
   const mutation = useMutation({
     mutationFn: async (data) => {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
       const res = await axios.post(`${API_BASE_URL}/token/`, {
         username: data.username,
         password: data.password
@@ -110,9 +115,13 @@ const SignIn = () => {
               Sign Up
             </Link>
           </p>
-          <div className="flex justify-center">
-            <GoogleLogin onSuccess={handleGoogleLogin} onError={() => alert("Google login failed")} />
-          </div>
+          {import.meta.env.VITE_GOOGLE_CLIENT_ID ? (
+            <div className="flex justify-center">
+              <GoogleLogin onSuccess={handleGoogleLogin} onError={() => alert("Google login failed")} />
+            </div>
+          ) : (
+            <p className="text-xs text-gray-500">Google login not configured</p>
+          )}
         </div>
       </div>
     </div>

@@ -167,15 +167,19 @@ if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
 else:
     # In production, specify allowed origins
-    CORS_ALLOWED_ORIGINS = os.environ.get(
-        'CORS_ALLOWED_ORIGINS', 
+    CORS_ALLOWED_ORIGINS = [
+        url.strip() for url in os.environ.get(
+            'CORS_ALLOWED_ORIGINS', 
+            'http://localhost:5173,http://localhost:3000'
+        ).split(',')
+    ]
+
+CSRF_TRUSTED_ORIGINS = [
+    url.strip() for url in os.environ.get(
+        'CSRF_TRUSTED_ORIGINS',
         'http://localhost:5173,http://localhost:3000'
     ).split(',')
-
-CSRF_TRUSTED_ORIGINS = os.environ.get(
-    'CSRF_TRUSTED_ORIGINS',
-    'http://localhost:5173,http://localhost:3000'
-).split(',')
+]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = not DEBUG

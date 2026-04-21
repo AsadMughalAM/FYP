@@ -117,7 +117,6 @@ Return ONLY valid JSON starting with {{ and ending with }}. No other text."""
                 "topK": 40,
                 "topP": 0.95,
                 "maxOutputTokens": 1024,
-                "responseMimeType": "application/json",
             },
             "safetySettings": [
                 {

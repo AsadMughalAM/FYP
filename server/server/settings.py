@@ -30,11 +30,9 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dlub@8un+1^f_pt+$_ie_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-# Allow ALL hosts - for development and production flexibility
-# Use '*' to accept any host in development, but be more specific in production
 ALLOWED_HOSTS = os.environ.get(
     'ALLOWED_HOSTS',
-    '*'
+    'localhost,127.0.0.1,content-possibility.up.railway.app,.railway.app'
 ).split(',')
 
 
@@ -58,7 +56,6 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
-    'server.middleware.ForceCorsMiddleware',  # Our custom CORS FIRST - before anything else
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -165,24 +162,34 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
 }
 
-# CORS Configuration - FORCE ALL ORIGINS for production
+# CORS Configuration
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_EXPOSE_HEADERS = ['Content-Type', 'Authorization']
 
+# Always allow these origins for flexibility
 CORS_ALLOWED_ORIGINS = [
     'https://fyp-two-bice.vercel.app',
     'http://localhost:5173',
     'http://localhost:3000',
-    'https://*.vercel.app',
 ]
+
+# Add any additional origins from environment variable
+if os.environ.get('CORS_ALLOWED_ORIGINS'):
+    additional_origins = [url.strip() for url in os.environ.get('CORS_ALLOWED_ORIGINS').split(',')]
+    CORS_ALLOWED_ORIGINS.extend(additional_origins)
+
+# If DEBUG is True, allow all origins (development mode)
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
 
 CSRF_TRUSTED_ORIGINS = [
     'https://fyp-two-bice.vercel.app',
     'http://localhost:5173',
     'http://localhost:3000',
-    'https://*.vercel.app',
 ]
+
+if os.environ.get('CSRF_TRUSTED_ORIGINS'):
+    additional_csrf = [url.strip() for url in os.environ.get('CSRF_TRUSTED_ORIGINS').split(',')]
+    CSRF_TRUSTED_ORIGINS.extend(additional_csrf)
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = not DEBUG

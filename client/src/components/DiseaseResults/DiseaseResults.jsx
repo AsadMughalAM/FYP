@@ -1,4 +1,18 @@
 import React, { useEffect, useState } from "react";
+import { 
+  AlertTriangle, 
+  CheckCircle2, 
+  Info, 
+  ShieldAlert, 
+  Stethoscope, 
+  ShieldCheck, 
+  Dna,
+  History,
+  Activity,
+  FileSearch,
+  ClipboardCheck,
+  Zap
+} from "lucide-react";
 
 const DiseaseResults = ({ detection, refreshTrigger }) => {
   const [result, setResult] = useState(detection);
@@ -11,228 +25,202 @@ const DiseaseResults = ({ detection, refreshTrigger }) => {
 
   if (!result) {
     return (
-      <div className="text-center py-16">
-        <div className="text-6xl mb-4">📁</div>
-        <h3 className="text-2xl font-bold text-gray-700 mb-2">No Detection Results</h3>
-        <p className="text-gray-500">Upload an image first to see diagnosis results</p>
+      <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in duration-700">
+        <div className="w-24 h-24 bg-slate-50 rounded-[2.5rem] flex items-center justify-center text-slate-300 mb-6">
+          <FileSearch size={48} />
+        </div>
+        <h3 className="text-xl font-bold text-slate-900 mb-2">Awaiting Diagnosis</h3>
+        <p className="text-slate-500 max-w-xs mx-auto">
+          Upload an animal image or describe symptoms to generate a neural health report.
+        </p>
       </div>
     );
   }
 
-  const severity_colors = {
-    None: "bg-green-100 text-green-800 border-green-300",
-    Low: "bg-yellow-100 text-yellow-800 border-yellow-300",
-    Medium: "bg-orange-100 text-orange-800 border-orange-300",
-    High: "bg-red-100 text-red-800 border-red-300",
-    Critical: "bg-red-200 text-red-900 border-red-400"
+  const severityStyles = {
+    None: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-100", icon: <CheckCircle2 size={18} /> },
+    Low: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-100", icon: <Info size={18} /> },
+    Medium: { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-100", icon: <AlertTriangle size={18} /> },
+    High: { bg: "bg-orange-50", text: "text-orange-700", border: "border-orange-100", icon: <ShieldAlert size={18} /> },
+    Critical: { bg: "bg-red-50", text: "text-red-700", border: "border-red-100", icon: <ShieldAlert size={18} /> }
   };
 
-  const severity_bg = {
-    None: "bg-green-50",
-    Low: "bg-yellow-50",
-    Medium: "bg-orange-50",
-    High: "bg-red-50",
-    Critical: "bg-red-100"
-  };
+  const currentSeverity = severityStyles[result.severity] || severityStyles.Medium;
 
   return (
-    <div className="space-y-5">
-      {/* AI-Powered Badge */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 rounded-lg border border-purple-200/60">
-          <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-          </svg>
-          <span className="text-xs font-medium text-purple-700">AI-Powered Diagnosis</span>
-        </div>
-        {/* Data Source Indicator */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 rounded-lg border border-green-200/60">
-          <span className="text-xs font-medium text-green-700">🔄 REAL-TIME</span>
-          <span className="text-xs text-green-600">Gemini API</span>
-        </div>
-      </div>
-
-      {/* Disease Summary Card */}
-      <div className={`rounded-lg border p-6 ${severity_colors[result.severity] || severity_colors.Medium}`}>
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h3 className="text-2xl font-semibold mb-1.5">
-              {result.disease_name || "Unknown Disease"}
-            </h3>
-            <p className="text-sm opacity-90">
-              Animal: <span className="font-medium">{result.animal_name || "Unknown"}</span>
-            </p>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Report Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="px-2.5 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-widest rounded-full">Report #{result.id || "TMP-1"}</span>
+            <span className="text-slate-400 text-xs font-medium">{new Date(result.created_at).toLocaleString()}</span>
           </div>
-          <div className="text-right">
-            <p className="text-3xl font-semibold opacity-90">
-              {(result.confidence_score * 100).toFixed(1)}%
-            </p>
-            <p className="text-xs opacity-75">Confidence</p>
-          </div>
-        </div>
-
-        {/* Severity Badge */}
-        <div className="inline-block">
-          <span className="inline-block px-3 py-1 rounded-full text-xs font-medium">
-            🚨 Severity: {result.severity || "Unknown"}
-          </span>
-        </div>
-      </div>
-
-      {/* Image Preview */}
-      {result.image && (
-        <div className="bg-gray-50/50 rounded-lg p-4 border border-gray-200/60">
-          <p className="text-xs font-medium text-gray-600 mb-2.5">Uploaded Image</p>
-          <img
-            src={result.image}
-            alt="Animal"
-            className="w-full max-h-80 object-cover rounded-lg border border-gray-200"
-          />
-        </div>
-      )}
-
-      {/* Prediction Confidence */}
-      {result.all_predictions && Object.keys(result.all_predictions).length > 0 && (
-        <div className="bg-blue-50/50 rounded-lg p-5 border border-blue-200/60">
-          <h4 className="text-sm font-semibold text-blue-900 mb-3">📊 Model Predictions</h4>
-          <div className="space-y-2.5">
-            {Object.entries(result.all_predictions)
-              .sort((a, b) => b[1] - a[1])
-              .map(([disease, confidence], index) => (
-                <div key={disease}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-blue-900">{disease}</span>
-                    <span className="text-xs font-semibold text-blue-700">
-                      {(confidence * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-blue-200/60 rounded-full h-2 overflow-hidden">
-                    <div
-                      className={`h-full transition-all ${
-                        disease.toLowerCase().replace(/\s+/g, ' ') === result.disease_name?.toLowerCase().replace(/\s+/g, ' ') ||
-                        disease.toLowerCase().includes(result.disease_name?.toLowerCase() || '') ||
-                        result.disease_name?.toLowerCase().includes(disease.toLowerCase())
-                          ? "bg-blue-600"
-                          : "bg-blue-400"
-                      }`}
-                      style={{ width: `${confidence * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
-
-      {/* Symptoms - From Gemini AI */}
-      {result.symptoms && result.symptoms.length > 0 && (
-        <div className="bg-yellow-50/50 rounded-lg p-5 border border-yellow-200/60">
-          <div className="flex items-center gap-2 mb-3">
-            <h4 className="text-sm font-semibold text-yellow-900">⚠️ Symptoms</h4>
-            <span className="text-xs bg-yellow-200/60 text-yellow-800 px-2 py-0.5 rounded-full font-medium">
-              AI-Generated
-            </span>
-          </div>
-          <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {result.symptoms.map((symptom, index) => (
-              <li key={index} className="flex items-start gap-2">
-                <span className="text-yellow-600 text-sm mt-0.5">🔸</span>
-                <span className="text-sm text-yellow-900">{symptom}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Treatment - From Gemini AI */}
-      {result.treatment && result.treatment.length > 0 && (
-        <div className="bg-green-50/50 rounded-lg p-5 border border-green-200/60">
-          <div className="flex items-center gap-2 mb-3">
-            <h4 className="text-sm font-semibold text-green-900">💊 Treatment</h4>
-            <span className="text-xs bg-green-200/60 text-green-800 px-2 py-0.5 rounded-full font-medium">
-              AI-Generated
-            </span>
-          </div>
-          <ol className="space-y-2">
-            {result.treatment.map((treatment, index) => (
-              <li key={index} className="flex gap-2.5">
-                <span className="font-semibold text-green-600 shrink-0 text-sm">
-                  {index + 1}.
-                </span>
-                <span className="text-sm text-green-900">{treatment}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
-      )}
-
-      {/* Prevention - From Gemini AI */}
-      {result.prevention && result.prevention.length > 0 && (
-        <div className="bg-indigo-50/50 rounded-lg p-5 border border-indigo-200/60">
-          <div className="flex items-center gap-2 mb-3">
-            <h4 className="text-sm font-semibold text-indigo-900">🛡️ Prevention</h4>
-            <span className="text-xs bg-indigo-200/60 text-indigo-800 px-2 py-0.5 rounded-full font-medium">
-              AI-Generated
-            </span>
-          </div>
-          <ul className="space-y-2">
-            {result.prevention.map((item, index) => (
-              <li key={index} className="flex items-start gap-2">
-                <span className="text-indigo-600 text-sm mt-0.5">✓</span>
-                <span className="text-sm text-indigo-900">{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Antibiotics - From Gemini AI */}
-      {result.antibiotics && result.antibiotics.length > 0 && (
-        <div className="bg-purple-50/50 rounded-lg p-5 border border-purple-200/60">
-          <div className="flex items-center gap-2 mb-3">
-            <h4 className="text-sm font-semibold text-purple-900">💉 Recommended Antibiotics</h4>
-            <span className="text-xs bg-purple-200/60 text-purple-800 px-2 py-0.5 rounded-full font-medium">
-              AI-Generated
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {result.antibiotics.map((antibiotic, index) => (
-              <span
-                key={index}
-                className="bg-purple-200/60 text-purple-900 px-3 py-1 rounded-full text-xs font-medium"
-              >
-                {antibiotic}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Contagious Warning */}
-      {result.contagious && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="flex items-start gap-2.5">
-            <span className="text-xl">⚠️</span>
-            <span className="text-sm font-medium text-red-900">
-              This disease is contagious. Isolate the affected animal from others immediately.
-            </span>
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight">{result.disease_name || "Unknown Condition"}</h2>
+          <p className="text-slate-500 font-medium flex items-center gap-2 mt-1">
+            <Dna size={14} className="text-blue-500" />
+            Subject: <span className="text-slate-700">{result.animal_name || "Unknown Species"}</span>
           </p>
         </div>
-      )}
 
-      {/* Metadata */}
-      <div className="bg-gray-50/50 rounded-lg p-4 border border-gray-200/60 text-xs text-gray-600">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="font-medium">📅 Diagnosed: {new Date(result.created_at).toLocaleString()}</p>
-            <p className="mt-1">🏥 Status: <span className="font-medium capitalize">{result.status || "diagnosed"}</span></p>
+        <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-3xl border border-slate-200/60">
+          <div className="text-right">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Confidence</p>
+            <p className="text-2xl font-black text-slate-900 leading-none">{(result.confidence_score * 100).toFixed(1)}%</p>
           </div>
-          {result.notes && (
-            <div className="text-right">
-              <p className="font-medium">Notes:</p>
-              <p className="text-xs">{result.notes}</p>
+          <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+            <Activity size={24} />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Main Analysis Column */}
+        <div className="lg:col-span-8 space-y-8">
+          {/* Severity Alert */}
+          <div className={`flex items-center gap-4 p-5 rounded-3xl border-2 ${currentSeverity.bg} ${currentSeverity.border} ${currentSeverity.text}`}>
+            <div className="shrink-0 p-2 bg-white rounded-xl shadow-sm">
+              {currentSeverity.icon}
+            </div>
+            <div>
+              <h4 className="text-sm font-black uppercase tracking-wider">Severity Level: {result.severity || "Standard"}</h4>
+              <p className="text-xs opacity-90 font-medium mt-0.5">Automated assessment based on identified biomarkers and historical data.</p>
+            </div>
+          </div>
+
+          {/* Contagious Warning */}
+          {result.contagious && (
+            <div className="bg-red-900 text-white p-6 rounded-[2rem] shadow-xl shadow-red-900/10 flex gap-4 animate-pulse">
+              <ShieldAlert size={28} className="shrink-0" />
+              <div>
+                <h4 className="text-lg font-bold mb-1">Containment Required</h4>
+                <p className="text-sm text-red-100/90 leading-relaxed">
+                  This condition is highly contagious. Immediate isolation of the subject and sterilization of the environment is recommended.
+                </p>
+              </div>
             </div>
           )}
+
+          {/* Detailed Intelligence Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 hover:shadow-lg transition-shadow duration-300">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
+                  <Stethoscope size={20} />
+                </div>
+                <h5 className="font-bold text-slate-900">Symptoms</h5>
+              </div>
+              <ul className="space-y-2.5">
+                {result.symptoms?.map((item, i) => (
+                  <li key={i} className="flex gap-2 text-sm text-slate-600">
+                    <span className="w-1.5 h-1.5 bg-amber-400 rounded-full shrink-0 mt-1.5"></span>
+                    {item}
+                  </li>
+                )) || <li className="text-xs text-slate-400 italic">No symptoms recorded</li>}
+              </ul>
+            </div>
+
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 hover:shadow-lg transition-shadow duration-300">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                  <ShieldCheck size={20} />
+                </div>
+                <h5 className="font-bold text-slate-900">Prevention</h5>
+              </div>
+              <ul className="space-y-2.5">
+                {result.prevention?.map((item, i) => (
+                  <li key={i} className="flex gap-2 text-sm text-slate-600">
+                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full shrink-0 mt-1.5"></span>
+                    {item}
+                  </li>
+                )) || <li className="text-xs text-slate-400 italic">No prevention data</li>}
+              </ul>
+            </div>
+          </div>
+
+          <div className="bg-slate-900 text-white rounded-[2rem] p-8 shadow-xl shadow-slate-900/10 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/10 blur-[80px] rounded-full"></div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-white/10 rounded-xl">
+                  <Zap size={20} className="text-blue-400" />
+                </div>
+                <h5 className="text-lg font-bold">Treatment Protocol</h5>
+              </div>
+              <div className="space-y-4">
+                {result.treatment?.map((step, i) => (
+                  <div key={i} className="flex gap-4 p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-colors">
+                    <span className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0">{i + 1}</span>
+                    <p className="text-sm text-slate-300 leading-relaxed">{step}</p>
+                  </div>
+                )) || <p className="text-sm text-slate-500">Contact a specialist for treatment details.</p>}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sidebar Data Column */}
+        <div className="lg:col-span-4 space-y-6">
+          {/* Visual Evidence */}
+          <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+              <h5 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Medical Evidence</h5>
+              <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] rounded-full">RAW DATA</span>
+            </div>
+            <div className="p-4">
+              {result.image ? (
+                <img src={result.image} alt="Diagnosis" className="w-full h-48 object-cover rounded-2xl" />
+              ) : (
+                <div className="w-full h-48 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 italic text-sm">No image available</div>
+              )}
+            </div>
+          </div>
+
+          {/* Prediction Matrix */}
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+            <h5 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-4">Neural Probability</h5>
+            <div className="space-y-4">
+              {result.all_predictions && Object.entries(result.all_predictions)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 4)
+                .map(([name, conf], i) => (
+                  <div key={i}>
+                    <div className="flex justify-between text-xs font-bold mb-1.5">
+                      <span className="text-slate-600 truncate mr-2">{name}</span>
+                      <span className="text-blue-600">{(conf * 100).toFixed(0)}%</span>
+                    </div>
+                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="bg-blue-600 h-full transition-all duration-1000" style={{ width: `${conf * 100}%` }}></div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+
+          {/* Antibiotic Insights */}
+          {result.antibiotics?.length > 0 && (
+            <div className="bg-blue-600 text-white rounded-3xl p-6 shadow-lg shadow-blue-600/20">
+              <h5 className="text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
+                <ClipboardCheck size={14} />
+                Recommended Agents
+              </h5>
+              <div className="flex flex-wrap gap-2">
+                {result.antibiotics.map((name, i) => (
+                  <span key={i} className="px-3 py-1 bg-white/10 border border-white/20 rounded-full text-[10px] font-bold uppercase">
+                    {name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Report Footer/Legal */}
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/60 flex gap-3">
+            <Info size={16} className="text-slate-400 shrink-0" />
+            <p className="text-[10px] text-slate-500 leading-relaxed font-medium">
+              This report is generated by a neural network and should be verified by a licensed veterinarian before clinical intervention.
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -240,3 +228,4 @@ const DiseaseResults = ({ detection, refreshTrigger }) => {
 };
 
 export default DiseaseResults;
+

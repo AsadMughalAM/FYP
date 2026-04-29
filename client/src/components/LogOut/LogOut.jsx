@@ -1,7 +1,9 @@
-import React from 'react'
+import React from 'react';
 import { useNavigate } from "react-router-dom";
+import { LogOut as LogOutIcon } from "lucide-react";
+
 const LogOut = () => {
-      const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     localStorage.removeItem("access_token");
@@ -13,11 +15,12 @@ const LogOut = () => {
   return (
     <button 
       onClick={handleLogout} 
-      className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors duration-150 border border-gray-200/60 hover:border-gray-300"
+      className="flex items-center gap-2 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-300 group border border-transparent hover:border-red-100"
     >
-      Logout
+      <LogOutIcon size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+      Sign Out
     </button>
-  )
+  );
 }
 
-export default LogOut
+export default LogOut;

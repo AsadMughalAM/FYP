@@ -2,18 +2,28 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
+import { 
+  Upload, 
+  CheckCircle2, 
+  AlertCircle, 
+  X, 
+  Zap, 
+  ShieldCheck, 
+  Lightbulb,
+  Search,
+  RefreshCw,
+  Camera
+} from "lucide-react";
 
 const ImageDiagnosis = ({ onUploadSuccess }) => {
-  const { register, handleSubmit, formState: { errors }, reset } = useForm();
+  const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm();
   const [preview, setPreview] = useState(null);
+  const selectedImage = watch("image");
 
   const mutation = useMutation({
     mutationFn: async (data) => {
       const token = localStorage.getItem("access_token");
-      
-      if (!token) {
-        throw new Error("No authentication token found. Please sign in again.");
-      }
+      if (!token) throw new Error("Session expired. Please sign in again.");
 
       const formData = new FormData();
       formData.append("image", data.image[0]);
@@ -39,10 +49,8 @@ const ImageDiagnosis = ({ onUploadSuccess }) => {
       setPreview(null);
     },
     onError: (error) => {
-      console.error("Upload failed:", error);
       if (error.response?.status === 401) {
         localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
         window.location.href = "/signin";
       }
     },
@@ -58,259 +66,205 @@ const ImageDiagnosis = ({ onUploadSuccess }) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result);
-      };
+      reader.onloadend = () => setPreview(reader.result);
       reader.readAsDataURL(file);
     }
   };
 
+  const clearImage = () => {
+    setPreview(null);
+    setValue("image", null);
+  };
+
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-1.5">Image-Based Diagnosis</h2>
-        <p className="text-sm text-gray-600">
-          Upload a clear image of the affected animal area for AI-powered disease detection
+    <div className="w-full max-w-5xl mx-auto">
+      {/* Header Section */}
+      <div className="mb-10 text-center sm:text-left">
+        <div className="flex items-center justify-center sm:justify-start gap-3 mb-2">
+          <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+            <Zap size={20} />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900">Neural Image Diagnostics</h2>
+        </div>
+        <p className="text-slate-500 max-w-2xl leading-relaxed">
+          Leverage advanced neural networks to identify animal diseases from photos. 
+          Our AI analyzes texture, color patterns, and anatomical markers.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <div className="bg-white rounded-lg border border-gray-200/60 p-6">
-          <label className="block">
-            <span className="text-sm font-medium text-gray-700 mb-3 block">
-              Upload Animal Image
-            </span>
-            <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-10 hover:border-blue-400 transition-colors cursor-pointer bg-gray-50/50 hover:bg-blue-50/50">
-              <input
-                type="file"
-                id="image"
-                accept="image/*"
-                {...register("image", {
-                  required: "Please upload an image",
-                  validate: {
-                    fileSize: (files) => {
-                      if (!files || !files[0]) return true;
-                      return (
-                        files[0].size <= 10 * 1024 * 1024 ||
-                        "File size must be less than 10MB"
-                      );
-                    },
-                    fileType: (files) => {
-                      if (!files || !files[0]) return true;
-                      const allowedTypes = [
-                        "image/jpeg",
-                        "image/png",
-                        "image/gif",
-                        "image/webp",
-                      ];
-                      return (
-                        allowedTypes.includes(files[0].type) ||
-                        "Please upload a valid image file (JPG, PNG, GIF, or WEBP)"
-                      );
-                    },
-                  },
-                })}
-                onChange={handleFileChange}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
-              <div className="text-center pointer-events-none">
-                {preview ? (
-                  <div className="space-y-3">
-                    <img
-                      src={preview}
-                      alt="Preview"
-                      className="max-h-56 mx-auto rounded-lg shadow-sm object-cover border border-gray-200"
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Upload Column */}
+        <div className="lg:col-span-7 space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <div className={`relative group transition-all duration-500 ${mutation.isPending ? 'opacity-80 pointer-events-none' : ''}`}>
+              {!preview ? (
+                <label className="block cursor-pointer">
+                  <div className="relative border-2 border-dashed border-slate-200 rounded-[2rem] p-12 bg-slate-50/50 hover:bg-white hover:border-blue-400 hover:shadow-2xl hover:shadow-blue-900/5 transition-all duration-300 text-center">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      {...register("image", { 
+                        required: "Image is required",
+                        onChange: handleFileChange 
+                      })}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
                     />
-                    <p className="text-xs text-gray-500 text-center">Click to change image</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-lg mb-3">
-                      <svg
-                        className="w-6 h-6 text-blue-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
+                    <div className="flex flex-col items-center">
+                      <div className="w-20 h-20 bg-white rounded-3xl shadow-sm flex items-center justify-center mb-6 text-slate-400 group-hover:text-blue-600 group-hover:scale-110 transition-all duration-500">
+                        <Upload size={32} />
+                      </div>
+                      <h4 className="text-lg font-bold text-slate-900 mb-1">Drop your image here</h4>
+                      <p className="text-sm text-slate-500 mb-6">or click to browse from device</p>
+                      
+                      <div className="flex flex-wrap justify-center gap-3">
+                        <span className="px-3 py-1 bg-white rounded-full text-[10px] font-bold text-slate-400 uppercase border border-slate-100">JPG</span>
+                        <span className="px-3 py-1 bg-white rounded-full text-[10px] font-bold text-slate-400 uppercase border border-slate-100">PNG</span>
+                        <span className="px-3 py-1 bg-white rounded-full text-[10px] font-bold text-slate-400 uppercase border border-slate-100">WEBP</span>
+                      </div>
                     </div>
-                    <p className="text-sm font-medium text-gray-700 mb-1.5">
-                      Click to upload or drag and drop
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      PNG, JPG, GIF, or WEBP (max 10MB)
-                    </p>
-                  </>
-                )}
-              </div>
-            </div>
-          </label>
+                  </div>
+                </label>
+              ) : (
+                <div className="relative bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-2xl shadow-slate-900/5 group">
+                  <div className="aspect-[4/3] w-full relative">
+                    <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                    
+                    {/* Scanning Animation */}
+                    {mutation.isPending && (
+                      <div className="absolute inset-0 bg-blue-600/10 backdrop-blur-[1px]">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)] animate-[scan_2s_ease-in-out_infinite]"></div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="bg-white/90 backdrop-blur px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3">
+                            <RefreshCw className="animate-spin text-blue-600" size={20} />
+                            <span className="text-sm font-bold text-slate-900 uppercase tracking-wider">AI Processing...</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
-          {errors.image && (
-            <p className="text-red-600 text-xs font-medium mt-3 flex items-center gap-1.5">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              {errors.image.message}
-            </p>
-          )}
-        </div>
-
-        <div className="bg-blue-50/50 rounded-lg border border-blue-200/60 p-5">
-          <h4 className="text-sm font-medium text-blue-900 mb-3 flex items-center gap-2">
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            Tips for Best Results
-          </h4>
-          <ul className="text-xs text-blue-800 space-y-1.5">
-            <li className="flex items-start gap-2">
-              <span className="text-blue-600 mt-0.5">✓</span>
-              <span>Use clear, well-lit images with good focus</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-blue-600 mt-0.5">✓</span>
-              <span>Ensure the affected area is clearly visible</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-blue-600 mt-0.5">✓</span>
-              <span>Avoid blurry, dark, or shadowed photos</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-blue-600 mt-0.5">✓</span>
-              <span>Take images from multiple angles if possible</span>
-            </li>
-          </ul>
-        </div>
-
-        <button
-          type="submit"
-          disabled={mutation.isPending}
-          className={`w-full py-3 rounded-lg text-sm font-medium text-white transition-all duration-150 flex items-center justify-center gap-2 ${
-            mutation.isPending
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow"
-          }`}
-        >
-          {mutation.isPending ? (
-            <>
-              <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-              Analyzing Image...
-            </>
-          ) : (
-            <>
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              Detect Disease
-            </>
-          )}
-        </button>
-
-        {mutation.isSuccess && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-2.5">
-            <svg
-              className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <div>
-              <p className="text-sm font-medium text-green-900">Detection Successful!</p>
-              <p className="text-xs text-green-800 mt-0.5">
-                Check the Results tab to view the diagnosis details.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {mutation.isError && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-2.5">
-            <svg
-              className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-red-900">Upload Failed</p>
-              <p className="text-xs text-red-800 mt-0.5">
-                {mutation.error?.response?.status === 401
-                  ? "Authentication failed. Please sign in again."
-                  : mutation.error?.response?.data?.gemini_error?.status
-                    ? `Gemini error (${mutation.error.response.data.gemini_error.status}): ${mutation.error.response.data.gemini_error.message || "Request failed"}`
-                    : mutation.error?.response?.data?.gemini_error?.message
-                      ? `Gemini error: ${mutation.error.response.data.gemini_error.message}`
-                      : mutation.error?.response?.data?.error ||
-                        mutation.error?.message ||
-                        "An error occurred during upload. Please try again."}
-              </p>
-              {mutation.error?.response?.status === 401 && (
-                <button
-                  type="button"
-                  onClick={() => (window.location.href = "/signin")}
-                  className="mt-2.5 px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-xs font-medium"
-                >
-                  Go to Sign In
-                </button>
+                    <button 
+                      type="button"
+                      onClick={clearImage}
+                      className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur hover:bg-red-50 hover:text-red-600 rounded-xl shadow-lg transition-all active:scale-90"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
+
+            {errors.image && (
+              <div className="flex items-center gap-2 p-3 bg-red-50 text-red-600 rounded-xl border border-red-100 animate-in fade-in slide-in-from-top-2">
+                <AlertCircle size={16} />
+                <span className="text-xs font-bold">{errors.image.message}</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={!preview || mutation.isPending}
+              className={`w-full py-4 rounded-2xl text-sm font-bold uppercase tracking-widest flex items-center justify-center gap-3 transition-all duration-300 transform active:scale-[0.98] ${
+                !preview || mutation.isPending
+                  ? "bg-slate-100 text-slate-400"
+                  : "bg-blue-600 text-white hover:bg-blue-700 shadow-xl shadow-blue-600/20"
+              }`}
+            >
+              {mutation.isPending ? (
+                <>Analyzing Matrix...</>
+              ) : (
+                <>
+                  <Search size={20} />
+                  Initiate Analysis
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Feedback Section */}
+          {mutation.isError && (
+            <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex gap-3 animate-in fade-in">
+              <AlertCircle className="text-red-600 shrink-0" size={20} />
+              <div>
+                <h5 className="text-sm font-bold text-red-900">Analysis Halted</h5>
+                <p className="text-xs text-red-700 mt-0.5 leading-relaxed">
+                  {mutation.error?.response?.data?.error || mutation.error?.message || "An unexpected error occurred. Please try again."}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Guidance Column */}
+        <div className="lg:col-span-5 space-y-6">
+          <div className="bg-slate-900 rounded-[2rem] p-8 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/20 blur-[60px] rounded-full"></div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-blue-400">
+                  <ShieldCheck size={24} />
+                </div>
+                <h3 className="text-lg font-bold">Preparation Guide</h3>
+              </div>
+              
+              <div className="space-y-5">
+                {[
+                  { title: "Lighting", desc: "Ensure natural or bright indoor lighting", icon: <Lightbulb size={18} /> },
+                  { title: "Focus", desc: "Center the affected area clearly", icon: <Search size={18} /> },
+                  { title: "Clarity", desc: "Avoid blurry or shaky captures", icon: <Camera size={18} /> },
+                  { title: "Verification", desc: "AI diagnosis requires veterinary review", icon: <CheckCircle2 size={18} /> },
+                ].map((tip, i) => (
+                  <div key={i} className="flex gap-4 group">
+                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 group-hover:text-blue-400 transition-colors">
+                      {tip.icon}
+                    </div>
+                    <div>
+                      <h5 className="text-sm font-bold text-white/90">{tip.title}</h5>
+                      <p className="text-xs text-slate-400 mt-0.5">{tip.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        )}
-      </form>
+
+          <div className="bg-white border border-slate-200 rounded-[2rem] p-8">
+            <h4 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <RefreshCw size={16} className="text-blue-600" />
+              Recent Success Rates
+            </h4>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-slate-500">Dermal Conditions</span>
+                <span className="text-xs font-bold text-emerald-600">94% Accuracy</span>
+              </div>
+              <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                <div className="bg-emerald-500 h-full w-[94%]"></div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-slate-500">Eye Infections</span>
+                <span className="text-xs font-bold text-blue-600">89% Accuracy</span>
+              </div>
+              <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                <div className="bg-blue-500 h-full w-[89%]"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes scan {
+          0% { transform: translateY(0); opacity: 0.8; }
+          50% { opacity: 1; }
+          100% { transform: translateY(400px); opacity: 0.8; }
+        }
+      `}} />
     </div>
   );
 };
 
 export default ImageDiagnosis;
+
 

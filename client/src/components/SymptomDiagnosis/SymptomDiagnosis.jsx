@@ -2,139 +2,63 @@ import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { 
+  Stethoscope, 
+  Search, 
+  CheckCircle2, 
+  AlertCircle, 
+  ChevronRight, 
+  Info, 
+  Zap,
+  Activity,
+  ShieldCheck,
+  Dna,
+  ArrowRight,
+  ClipboardList
+} from "lucide-react";
 import API_BASE_URL, { getAuthHeaders } from "../../config/api";
 
 const SymptomDiagnosis = ({ onDiagnosisSuccess }) => {
   const { register, handleSubmit, formState: { errors }, reset } = useForm();
   const [selectedSymptoms, setSelectedSymptoms] = useState([]);
   const [diagnosisResults, setDiagnosisResults] = useState(null);
+  const [symptomSearch, setSymptomSearch] = useState("");
 
-  console.log("🔵 SymptomDiagnosis component rendered");
-  console.log("🔵 Selected symptoms:", selectedSymptoms);
-  console.log("🔵 Diagnosis results:", diagnosisResults);
-
-  const { data: symptomsData, isLoading: symptomsLoading, error: symptomsError } = useQuery({
+  const { data: symptomsData, isLoading: symptomsLoading } = useQuery({
     queryKey: ['symptoms'],
     queryFn: async () => {
-      console.log("🟢 Fetching symptoms from API...");
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        console.error("❌ No authentication token found");
-        throw new Error("No authentication token found");
-      }
-      
-      try {
-        const url = `${API_BASE_URL}/symptoms/`;
-        console.log("🟢 GET request to:", url);
-        console.log("🟢 Headers:", getAuthHeaders());
-        
-        const response = await axios.get(url, { headers: getAuthHeaders() });
-        console.log("✅ Symptoms fetched successfully:", response.data);
-        return response.data;
-      } catch (error) {
-        console.error("❌ Error fetching symptoms:", error);
-        console.error("❌ Error response:", error.response?.data);
-        console.error("❌ Error status:", error.response?.status);
-        throw error;
-      }
+      const response = await axios.get(`${API_BASE_URL}/symptoms/`, { headers: getAuthHeaders() });
+      return response.data;
     },
-    retry: 1,
-    onError: (error) => {
-      console.error("❌ useQuery error for symptoms:", error);
-    }
+    retry: 1
   });
 
   const availableSymptoms = symptomsData?.symptoms || [];
+  const filteredSymptoms = availableSymptoms.filter(s => 
+    s.toLowerCase().includes(symptomSearch.toLowerCase())
+  );
 
   const toggleSymptom = (symptom) => {
-    console.log("🟡 Toggling symptom:", symptom);
-    setSelectedSymptoms((prev) => {
-      const newSymptoms = prev.includes(symptom)
-        ? prev.filter((s) => s !== symptom)
-        : [...prev, symptom];
-      console.log("🟡 Updated symptoms:", newSymptoms);
-      return newSymptoms;
-    });
+    setSelectedSymptoms((prev) => 
+      prev.includes(symptom) ? prev.filter((s) => s !== symptom) : [...prev, symptom]
+    );
   };
 
   const mutation = useMutation({
     mutationFn: async (formData) => {
-      console.log("🟢 ========== DIAGNOSIS REQUEST START ==========");
-      console.log("🟢 Form data received:", formData);
-      console.log("🟢 Selected symptoms:", selectedSymptoms);
-      
-      const token = localStorage.getItem("access_token");
-      
-      if (!token) {
-        console.error("❌ No authentication token found");
-        throw new Error("No authentication token found. Please sign in again.");
-      }
-
       const requestPayload = {
         symptoms: selectedSymptoms,
         animal_name: formData?.animal_name || '',
         animal_age: formData?.animal_age || null,
         notes: formData?.notes || '',
       };
-
-      console.log("🟢 Request payload:", requestPayload);
-      console.log("🟢 Payload type:", typeof requestPayload);
-      console.log("🟢 Symptoms array:", Array.isArray(requestPayload.symptoms));
-      console.log("🟢 Symptoms count:", requestPayload.symptoms.length);
-
-      const url = `${API_BASE_URL}/diagnose/`;
-      const headers = getAuthHeaders();
-      
-      console.log("🟢 POST request to:", url);
-      console.log("🟢 Headers:", headers);
-      console.log("🟢 Payload:", JSON.stringify(requestPayload, null, 2));
-
-      try {
-        const response = await axios.post(url, requestPayload, { headers });
-        console.log("✅ ========== DIAGNOSIS SUCCESS ==========");
-        console.log("✅ Response status:", response.status);
-        console.log("✅ Response data:", response.data);
-        console.log("✅ Response data type:", typeof response.data);
-        console.log("✅ Results count:", response.data?.results?.length || 0);
-        return response.data;
-      } catch (error) {
-        console.error("❌ ========== DIAGNOSIS ERROR ==========");
-        console.error("❌ Error object:", error);
-        console.error("❌ Error message:", error.message);
-        console.error("❌ Error response:", error.response);
-        console.error("❌ Error response data:", error.response?.data);
-        console.error("❌ Error response status:", error.response?.status);
-        console.error("❌ Error response headers:", error.response?.headers);
-        
-        if (error.response) {
-          console.error("❌ Full error response:", JSON.stringify(error.response.data, null, 2));
-        }
-        
-        throw error;
-      }
+      const response = await axios.post(`${API_BASE_URL}/diagnose/`, requestPayload, { headers: getAuthHeaders() });
+      return response.data;
     },
     onSuccess: (data, variables) => {
-      console.log("✅ Mutation onSuccess called");
-      console.log("✅ Success data:", data);
-      console.log("✅ Variables (formData):", variables);
-      console.log("✅ Results:", data?.results);
-      console.log("✅ Results length:", data?.results?.length);
-      
       if (data && data.results && data.results.length > 0) {
-        console.log("✅ Setting diagnosisResults with data:", data);
-        console.log("✅ Diagnosis saved:", data.saved);
-        console.log("✅ Diagnosis ID:", data.diagnosis_id);
-        console.log("✅ Saved diagnosis data:", data.saved_diagnosis);
-        
-        setDiagnosisResults(data);
-        console.log("✅ diagnosisResults state updated");
-        
-        // Use saved diagnosis data if available, otherwise transform the best result
         let transformedDetection;
-        
         if (data.saved_diagnosis) {
-          // Use the saved diagnosis data from database
-          console.log("✅ Using saved diagnosis data from database");
           transformedDetection = {
             id: data.saved_diagnosis.id,
             disease_name: data.saved_diagnosis.disease_name || "Unknown Disease",
@@ -148,211 +72,117 @@ const SymptomDiagnosis = ({ onDiagnosisSuccess }) => {
             created_at: data.saved_diagnosis.created_at,
             status: data.saved_diagnosis.status || "diagnosed",
             animal_name: data.saved_diagnosis.animal_name || "Unknown",
-            all_predictions: (data.saved_diagnosis.all_results || []).reduce((acc, result) => {
-              acc[result.disease_name] = result.confidence;
-              return acc;
-            }, {})
-          };
-        } else {
-          // Fallback: transform the best result
-          console.log("⚠️ No saved diagnosis data, using transformed result");
-          const bestResult = data.results[0];
-          transformedDetection = {
-            disease_name: bestResult.disease_name || "Unknown Disease",
-            confidence_score: bestResult.confidence || 0,
-            severity: bestResult.severity || "Unknown",
-            symptoms: bestResult.matched_symptoms || [],
-            treatment: bestResult.treatment || [],
-            prevention: bestResult.prevention || [],
-            antibiotics: bestResult.medicines || [],
-            contagious: bestResult.contagious || false,
-            created_at: new Date().toISOString(),
-            status: "diagnosed",
-            animal_name: variables?.animal_name || "Unknown",
-            all_predictions: data.results.reduce((acc, result) => {
-              acc[result.disease_name] = result.confidence;
-              return acc;
-            }, {})
           };
         }
-        
-        console.log("✅ Transformed detection for DiseaseResults:", transformedDetection);
-        
-        if (onDiagnosisSuccess) {
-          console.log("✅ Calling onDiagnosisSuccess callback with transformed data");
+        setDiagnosisResults(data);
+        if (onDiagnosisSuccess && transformedDetection) {
           onDiagnosisSuccess(transformedDetection);
         }
-      } else {
-        console.warn("⚠️ No results in response:", { data, hasResults: !!data?.results });
-        setDiagnosisResults(data || { results: [], message: "No results returned" });
       }
-    },
-    onError: (error) => {
-      console.error("❌ Mutation onError called");
-      console.error("❌ Error:", error);
-      console.error("❌ Error response:", error.response);
-      setDiagnosisResults(null);
-    },
+    }
   });
 
   const onSubmit = (formData) => {
-    console.log("🟡 ========== FORM SUBMIT ==========");
-    console.log("🟡 Form data:", formData);
-    console.log("🟡 Selected symptoms:", selectedSymptoms);
-    console.log("🟡 Selected symptoms count:", selectedSymptoms.length);
-    
-    if (selectedSymptoms.length === 0) {
-      console.warn("⚠️ No symptoms selected, aborting submit");
-      return;
-    }
-    
-    console.log("🟡 Calling mutation.mutate()");
+    if (selectedSymptoms.length === 0) return;
     mutation.mutate(formData);
   };
 
-  useEffect(() => {
-    console.log("🟡 Diagnosis results changed:", diagnosisResults);
-    console.log("🟡 Diagnosis results type:", typeof diagnosisResults);
-    console.log("🟡 Has results property:", !!diagnosisResults?.results);
-    console.log("🟡 Results is array:", Array.isArray(diagnosisResults?.results));
-    console.log("🟡 Results length:", diagnosisResults?.results?.length);
-    console.log("🟡 Will render results:", diagnosisResults && diagnosisResults.results && diagnosisResults.results.length > 0);
-  }, [diagnosisResults]);
-
-  useEffect(() => {
-    console.log("🟡 Selected symptoms changed:", selectedSymptoms);
-  }, [selectedSymptoms]);
-
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-1.5">Symptom-Based Diagnosis</h2>
-        <p className="text-sm text-gray-600">
-          Select the symptoms you've observed in your animal to get a preliminary diagnosis
-        </p>
+    <div className="max-w-4xl mx-auto pb-20 animate-in fade-in duration-700">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div>
+          <div className="flex items-center gap-2 mb-2 text-blue-600">
+            <Stethoscope size={18} />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Diagnostic Intake</span>
+          </div>
+          <h2 className="text-4xl font-black text-slate-900 tracking-tight">Symptom Analysis</h2>
+          <p className="text-slate-500 font-medium mt-1">Cross-referencing behavioral and physical markers against our pathogen database.</p>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <div className="bg-white rounded-lg border border-gray-200/60 p-5">
-          <h3 className="text-sm font-semibold text-gray-900 mb-4">Animal Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                Animal Name <span className="text-gray-400 font-normal">(Optional)</span>
-              </label>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        {/* Subject Profiling */}
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200/60 shadow-sm">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+              <Dna size={20} />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900">Subject Profiling</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Animal Identifier</label>
               <input
                 type="text"
                 {...register("animal_name")}
-                className="w-full px-3.5 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition"
-                placeholder="e.g., Daisy, Buddy"
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all placeholder:text-slate-300"
+                placeholder="e.g., Alpha-01"
               />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                Animal Age <span className="text-gray-400 font-normal">(Optional)</span>
-              </label>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Biological Age (Months)</label>
               <input
                 type="number"
                 {...register("animal_age")}
-                className="w-full px-3.5 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition"
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
                 placeholder="Age in months"
-                min="0"
               />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200/60 p-5">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">
-            Select Symptoms{" "}
-            <span className="text-xs font-normal text-gray-500">
-              ({selectedSymptoms.length} selected)
-            </span>
-          </h3>
-          <p className="text-xs text-gray-600 mb-4">
-            Click on symptoms you've observed. Select multiple symptoms for better accuracy.
-          </p>
-
-          {symptomsLoading && (
-            <div className="text-center py-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto"></div>
-              <p className="text-xs text-gray-600 mt-2">Loading symptoms...</p>
+        {/* Marker Selection */}
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200/60 shadow-sm relative overflow-hidden">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-50 text-purple-600 rounded-xl">
+                <Activity size={20} />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900">Clinical Markers</h3>
             </div>
-          )}
-
-          {symptomsError && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-              <p className="text-xs text-yellow-800 font-medium mb-1">⚠️ Could not load symptoms from server</p>
-              <p className="text-xs text-yellow-700">
-                Error: {symptomsError?.response?.data?.message || symptomsError?.message || "Unknown error"}
-              </p>
+            
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+              <input 
+                type="text" 
+                placeholder="Filter symptoms..."
+                value={symptomSearch}
+                onChange={(e) => setSymptomSearch(e.target.value)}
+                className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:border-blue-500 transition-all w-full md:w-64"
+              />
             </div>
-          )}
+          </div>
 
-          {availableSymptoms.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
-              {availableSymptoms.map((symptom) => {
-                const isSelected = selectedSymptoms.includes(symptom);
-                return (
-                  <button
-                    key={symptom}
-                    type="button"
-                    onClick={() => toggleSymptom(symptom)}
-                    className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
-                      isSelected
-                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                        : "bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:bg-blue-50"
-                    }`}
-                  >
-                    {symptom}
-                  </button>
-                );
-              })}
-            </div>
-          ) : !symptomsLoading && (
-            <div className="text-center py-4 text-gray-500 text-sm">
-              No symptoms available. Please check your connection.
-            </div>
-          )}
-
-          {selectedSymptoms.length === 0 && (
-            <p className="text-red-600 text-xs mt-3 flex items-center gap-1.5">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              Please select at least one symptom
-            </p>
-          )}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {filteredSymptoms.map((symptom) => {
+              const isSelected = selectedSymptoms.includes(symptom);
+              return (
+                <button
+                  key={symptom}
+                  type="button"
+                  onClick={() => toggleSymptom(symptom)}
+                  className={`group px-4 py-3 rounded-2xl text-xs font-bold transition-all border text-left flex items-center justify-between ${
+                    isSelected 
+                      ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20" 
+                      : "bg-white border-slate-200 text-slate-600 hover:border-blue-400 hover:bg-blue-50/50"
+                  }`}
+                >
+                  <span className="truncate">{symptom}</span>
+                  {isSelected && <CheckCircle2 size={12} />}
+                </button>
+              );
+            })}
+          </div>
 
           {selectedSymptoms.length > 0 && (
-            <div className="mt-4 p-3.5 bg-blue-50/50 rounded-lg border border-blue-200/60">
-              <p className="text-xs font-medium text-blue-900 mb-2">
-                Selected Symptoms ({selectedSymptoms.length}):
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {selectedSymptoms.map((symptom) => (
-                  <span
-                    key={symptom}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-600 text-white rounded-full text-xs font-medium"
-                  >
-                    {symptom}
-                    <button
-                      type="button"
-                      onClick={() => toggleSymptom(symptom)}
-                      className="hover:text-blue-200 transition-colors"
-                    >
-                      ×
-                    </button>
+            <div className="mt-8 pt-8 border-t border-slate-100">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Active Observations ({selectedSymptoms.length})</p>
+              <div className="flex flex-wrap gap-2">
+                {selectedSymptoms.map(s => (
+                  <span key={s} className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 border border-blue-100">
+                    {s}
+                    <button type="button" onClick={() => toggleSymptom(s)} className="hover:text-red-500">×</button>
                   </span>
                 ))}
               </div>
@@ -360,323 +190,153 @@ const SymptomDiagnosis = ({ onDiagnosisSuccess }) => {
           )}
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200/60 p-5">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Additional Notes</h3>
+        {/* Clinical Observations */}
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200/60 shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
+              <ClipboardList size={20} />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900">Clinical Observations</h3>
+          </div>
           <textarea
             {...register("notes")}
             rows={4}
-            className="w-full px-3.5 py-2.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition resize-none"
-            placeholder="Add any additional observations, duration of symptoms, or other relevant information..."
+            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-[2rem] text-sm font-medium text-slate-700 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all resize-none placeholder:text-slate-300"
+            placeholder="Document additional behavioral anomalies, duration, and environmental factors..."
           />
         </div>
 
+        {/* Action Bar */}
         <button
           type="submit"
           disabled={mutation.isPending || selectedSymptoms.length === 0}
-          className={`w-full py-3 rounded-lg text-sm font-medium text-white transition-all duration-150 flex items-center justify-center gap-2 ${
+          className={`w-full group relative overflow-hidden py-5 rounded-[2rem] font-black uppercase tracking-[0.2em] text-xs transition-all flex items-center justify-center gap-3 ${
             mutation.isPending || selectedSymptoms.length === 0
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow"
+              ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+              : "bg-slate-900 text-white hover:bg-slate-800 shadow-2xl shadow-slate-900/20 active:scale-[0.98]"
           }`}
         >
           {mutation.isPending ? (
-            <>
-              <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-              Analyzing Symptoms...
-            </>
+            <div className="flex items-center gap-3">
+              <RefreshCw size={18} className="animate-spin" />
+              SYNCHRONIZING NEURAL MATRIX...
+            </div>
           ) : (
             <>
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              Get Diagnosis
+              INITIATE DIAGNOSTIC SEQUENCE
+              <Zap size={18} className="group-hover:scale-125 transition-transform text-blue-400" />
             </>
           )}
         </button>
-
-        {mutation.isSuccess && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-2.5">
-            <svg
-              className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-green-900">Diagnosis Successful!</p>
-              <p className="text-xs text-green-800 mt-0.5">
-                {diagnosisResults?.message || "Check results below"}
-              </p>
-              {diagnosisResults?.results && (
-                <p className="text-xs text-green-700 mt-1">
-                  Found {diagnosisResults.results.length} result(s)
-                </p>
-              )}
-              {diagnosisResults?.saved && (
-                <div className="mt-2 flex items-center gap-1.5">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <p className="text-xs text-green-700 font-medium">
-                    Diagnosis saved to history (ID: {diagnosisResults.diagnosis_id})
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {mutation.isError && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-2.5">
-            <svg
-              className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-red-900">Diagnosis Failed</p>
-              <p className="text-xs text-red-800 mt-0.5">
-                {mutation.error?.response?.data?.error ||
-                  mutation.error?.response?.data?.message ||
-                  mutation.error?.message ||
-                  "An error occurred. Please try again."}
-              </p>
-              {mutation.error?.response?.status === 401 && (
-                <button
-                  type="button"
-                  onClick={() => (window.location.href = "/signin")}
-                  className="mt-2.5 px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-xs font-medium"
-                >
-                  Go to Sign In
-                </button>
-              )}
-              <details className="mt-2">
-                <summary className="text-xs text-red-700 cursor-pointer">Show error details</summary>
-                <pre className="text-xs mt-1 p-2 bg-red-100 rounded overflow-auto">
-                  {JSON.stringify(mutation.error?.response?.data || mutation.error, null, 2)}
-                </pre>
-              </details>
-            </div>
-          </div>
-        )}
       </form>
 
-      {/* Debug Panel - Remove in production */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="mt-4 p-4 bg-gray-100 rounded-lg border border-gray-300 text-xs">
-          <p className="font-bold mb-2">🔍 Debug Info:</p>
-          <p>mutation.isSuccess: {String(mutation.isSuccess)}</p>
-          <p>mutation.isPending: {String(mutation.isPending)}</p>
-          <p>mutation.isError: {String(mutation.isError)}</p>
-          <p>diagnosisResults exists: {String(!!diagnosisResults)}</p>
-          <p>diagnosisResults.results exists: {String(!!diagnosisResults?.results)}</p>
-          <p>diagnosisResults.results is array: {String(Array.isArray(diagnosisResults?.results))}</p>
-          <p>diagnosisResults.results.length: {diagnosisResults?.results?.length || 0}</p>
-          <details className="mt-2">
-            <summary className="cursor-pointer font-medium">Show diagnosisResults</summary>
-            <pre className="mt-1 p-2 bg-white rounded overflow-auto max-h-40">
-              {JSON.stringify(diagnosisResults, null, 2)}
-            </pre>
-          </details>
-        </div>
-      )}
-
-      {/* Diagnosis Results Section */}
-      {diagnosisResults && diagnosisResults.results && Array.isArray(diagnosisResults.results) && diagnosisResults.results.length > 0 && (
-        <div className="mt-8 space-y-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold text-gray-900">Diagnosis Results</h3>
-            <button
-              onClick={() => {
-                console.log("🟡 Clearing diagnosis results");
-                setDiagnosisResults(null);
-              }}
-              className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50"
+      {/* Results Rendering */}
+      {diagnosisResults && (
+        <div className="mt-16 space-y-8 animate-in slide-in-from-bottom-8 duration-700">
+          <div className="flex items-center justify-between">
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight">Diagnostic Output</h3>
+            <button 
+              onClick={() => setDiagnosisResults(null)}
+              className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-red-500 transition-colors"
             >
-              Clear Results
+              Discard Protocol
             </button>
           </div>
 
-          {diagnosisResults.results.map((result, index) => (
-            <DiseaseResultCard key={index} result={result} />
-          ))}
+          <div className="grid grid-cols-1 gap-8">
+            {diagnosisResults.results?.map((res, i) => (
+              <div key={i} className="bg-white rounded-[3rem] border border-slate-200/60 overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-500 group">
+                {/* Result Header */}
+                <div className={`p-8 border-b border-slate-100 relative overflow-hidden`}>
+                  <div className={`absolute top-0 right-0 w-64 h-64 blur-[80px] rounded-full translate-x-32 -translate-y-32 ${res.severity === 'Critical' ? 'bg-red-500/10' : 'bg-blue-500/10'}`}></div>
+                  
+                  <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div>
+                      <div className="flex items-center gap-3 mb-4">
+                        <span className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border ${res.severity === 'Critical' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
+                          {res.severity} Risk
+                        </span>
+                        {res.contagious && (
+                          <span className="px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest bg-orange-50 text-orange-600 border border-orange-100">
+                            Biohazard / Contagious
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="text-3xl font-black text-slate-900 tracking-tight mb-2">{res.disease_name}</h4>
+                      <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Confidence Matrix: {(res.confidence * 100).toFixed(1)}%</p>
+                    </div>
+
+                    <div className="flex flex-col items-end">
+                      <div className="text-5xl font-black text-slate-900">{(res.confidence * 100).toFixed(0)}<span className="text-2xl text-blue-600">%</span></div>
+                      <div className="w-32 h-1.5 bg-slate-100 rounded-full mt-2 overflow-hidden">
+                        <div className="h-full bg-blue-600 transition-all duration-1000" style={{ width: `${res.confidence * 100}%` }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Result Content */}
+                <div className="p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  <div className="space-y-4">
+                    <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <Info size={12} className="text-blue-500" />
+                      Treatment Protocol
+                    </h5>
+                    <ul className="space-y-3">
+                      {res.treatment?.map((t, idx) => (
+                        <li key={idx} className="text-xs font-bold text-slate-700 flex gap-3">
+                          <span className="flex-shrink-0 w-5 h-5 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-[10px]">{idx + 1}</span>
+                          {t}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <Zap size={12} className="text-purple-500" />
+                      Medication / Antibiotics
+                    </h5>
+                    <div className="flex flex-wrap gap-2">
+                      {res.medicines?.map((m, idx) => (
+                        <span key={idx} className="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-xl text-[10px] font-black uppercase tracking-wider border border-purple-100">
+                          {m}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <ShieldCheck size={12} className="text-emerald-500" />
+                      Prevention Strategy
+                    </h5>
+                    <ul className="space-y-3">
+                      {res.prevention?.map((p, idx) => (
+                        <li key={idx} className="text-xs font-bold text-slate-700 flex gap-3 italic">
+                          <CheckCircle2 size={14} className="text-emerald-500 flex-shrink-0 mt-0.5" />
+                          {p}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="px-8 py-5 bg-slate-50 border-t border-slate-100 flex items-center justify-between group-hover:bg-blue-600 transition-colors">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-blue-100">AI-Generated Diagnostic Assessment</span>
+                  <button className="flex items-center gap-2 text-xs font-black text-blue-600 uppercase tracking-widest group-hover:text-white">
+                    Access Detailed Lab Report
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
-
-      {diagnosisResults && diagnosisResults.results && diagnosisResults.results.length === 0 && (
-        <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-          <div className="text-4xl mb-3">🔍</div>
-          <h3 className="text-lg font-semibold text-yellow-900 mb-2">No Matching Diseases Found</h3>
-          <p className="text-sm text-yellow-800 mb-4">
-            {diagnosisResults.suggestions || "Try selecting different symptoms or check spelling."}
-          </p>
-          <p className="text-xs text-yellow-700">
-            Input symptoms: {diagnosisResults.input_symptoms?.join(", ") || "N/A"}
-          </p>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const DiseaseResultCard = ({ result }) => {
-  const severityColors = {
-    None: "bg-green-100 text-green-800 border-green-300",
-    Low: "bg-yellow-100 text-yellow-800 border-yellow-300",
-    Medium: "bg-orange-100 text-orange-800 border-orange-300",
-    High: "bg-red-100 text-red-800 border-red-300",
-    Critical: "bg-red-200 text-red-900 border-red-400",
-    Unknown: "bg-gray-100 text-gray-800 border-gray-300"
-  };
-
-  const severity = result.severity || "Unknown";
-  const confidencePercent = ((result.confidence || 0) * 100).toFixed(1);
-  const matchRate = result.match_rate || 0;
-
-  return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-      {/* Header */}
-      <div className={`p-5 ${severityColors[severity] || severityColors.Unknown}`}>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <h4 className="text-xl font-semibold mb-1">{result.disease_name || "Unknown Disease"}</h4>
-            <div className="flex items-center gap-3 mt-2">
-              <span className="text-xs font-medium px-2 py-1 bg-white/30 rounded-full">
-                🚨 Severity: {severity}
-              </span>
-              {result.contagious && (
-                <span className="text-xs font-medium px-2 py-1 bg-red-500/30 rounded-full">
-                  ⚠️ Contagious
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-3xl font-bold">{confidencePercent}%</div>
-            <div className="text-xs opacity-75">Confidence</div>
-            <div className="text-xs mt-1 opacity-75">Match: {matchRate}%</div>
-          </div>
-        </div>
-      </div>
-
-      <div className="p-5 space-y-4">
-        {/* Matched Symptoms */}
-        {result.matched_symptoms && result.matched_symptoms.length > 0 && (
-          <div>
-            <h5 className="text-sm font-semibold text-gray-900 mb-2">✅ Matched Symptoms</h5>
-            <div className="flex flex-wrap gap-1.5">
-              {result.matched_symptoms.map((symptom, idx) => (
-                <span
-                  key={idx}
-                  className="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium"
-                >
-                  {symptom}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Treatment */}
-        {result.treatment && result.treatment.length > 0 && (
-          <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-            <h5 className="text-sm font-semibold text-green-900 mb-2 flex items-center gap-2">
-              💊 Treatment
-            </h5>
-            <ol className="space-y-1.5">
-              {result.treatment.map((item, idx) => (
-                <li key={idx} className="flex gap-2 text-sm text-green-900">
-                  <span className="font-semibold text-green-600">{idx + 1}.</span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
-        )}
-
-        {/* Medicines */}
-        {result.medicines && result.medicines.length > 0 && (
-          <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-            <h5 className="text-sm font-semibold text-purple-900 mb-2 flex items-center gap-2">
-              💉 Recommended Medicines
-            </h5>
-            <div className="flex flex-wrap gap-1.5">
-              {result.medicines.map((medicine, idx) => (
-                <span
-                  key={idx}
-                  className="px-3 py-1 bg-purple-200 text-purple-900 rounded-full text-xs font-medium"
-                >
-                  {medicine}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Prevention */}
-        {result.prevention && result.prevention.length > 0 && (
-          <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
-            <h5 className="text-sm font-semibold text-indigo-900 mb-2 flex items-center gap-2">
-              🛡️ Prevention Steps
-            </h5>
-            <ul className="space-y-1.5">
-              {result.prevention.map((item, idx) => (
-                <li key={idx} className="flex items-start gap-2 text-sm text-indigo-900">
-                  <span className="text-indigo-600 mt-0.5">✓</span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Confidence Bar */}
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-medium text-gray-700">Match Confidence</span>
-            <span className="text-xs font-semibold text-gray-900">{confidencePercent}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-            <div
-              className={`h-full transition-all ${
-                parseFloat(confidencePercent) >= 70
-                  ? "bg-green-500"
-                  : parseFloat(confidencePercent) >= 40
-                  ? "bg-yellow-500"
-                  : "bg-red-500"
-              }`}
-              style={{ width: `${confidencePercent}%` }}
-            ></div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
 
 export default SymptomDiagnosis;
+

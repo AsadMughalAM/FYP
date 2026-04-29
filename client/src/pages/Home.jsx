@@ -6,11 +6,25 @@ import SymptomDiagnosis from "../components/SymptomDiagnosis/SymptomDiagnosis";
 import VetChat from "../components/VetChat/VetChat";
 import DiseaseResults from "../components/DiseaseResults/DiseaseResults";
 import DetectionHistory from "../components/DetectionHistory/DetectionHistory";
+import { 
+  LayoutDashboard, 
+  Image as ImageIcon, 
+  Stethoscope, 
+  FileText, 
+  History, 
+  MessageSquare, 
+  Menu, 
+  X,
+  Bell,
+  Search,
+  BookOpen
+} from "lucide-react";
 
 const Home = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [latestDetection, setLatestDetection] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleDiagnosisSuccess = (detection) => {
     setLatestDetection(detection);
@@ -19,138 +33,146 @@ const Home = () => {
   };
 
   const tabs = [
-    {
-      id: "dashboard",
-      label: "Dashboard",
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-        </svg>
-      ),
-    },
-    {
-      id: "image",
-      label: "Image Diagnosis",
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-      ),
-    },
-    {
-      id: "symptoms",
-      label: "Symptom Diagnosis",
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      ),
-    },
-    {
-      id: "results",
-      label: "Results",
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-    },
-    {
-      id: "history",
-      label: "History",
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-    },
-    {
-      id: "chat",
-      label: "Vet Chat",
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
-      ),
-    },
+    { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
+    { id: "image", label: "Image Diagnosis", icon: <ImageIcon size={20} /> },
+    { id: "symptoms", label: "Symptom Diagnosis", icon: <Stethoscope size={20} /> },
+    { id: "results", label: "Diagnosis Results", icon: <FileText size={20} /> },
+    { id: "history", label: "Medical History", icon: <History size={20} /> },
+    { id: "chat", label: "Vet AI Chat", icon: <MessageSquare size={20} /> },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
+    <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans selection:bg-blue-100">
+      {/* Premium Header */}
+      <header className="sticky top-0 z-[60] bg-white/80 backdrop-blur-md border-b border-slate-200/60 shadow-sm shadow-slate-900/5 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1600px] mx-auto flex items-center justify-between h-18">
+          <div className="flex items-center gap-4 lg:gap-8">
+            <button 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="lg:hidden p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <Menu size={24} />
+            </button>
+            
+            <div className="flex items-center gap-3 group cursor-pointer">
+              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20 group-hover:rotate-6 transition-all duration-300">
+                <BookOpen className="text-white" size={22} />
               </div>
-              <div>
-                <h1 className="text-lg font-semibold text-gray-900 leading-tight">VetAI Diagnostics</h1>
-                <p className="text-xs text-gray-500 leading-tight">Animal Health Management</p>
+              <div className="hidden sm:block">
+                <h1 className="text-lg font-bold tracking-tight text-slate-900">VetAI <span className="text-blue-600">Diagnostics</span></h1>
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Intelligent Health Hub</p>
               </div>
             </div>
-            <LogOut />
+          </div>
+
+          <div className="flex items-center gap-3 sm:gap-6">
+            <div className="hidden md:flex items-center bg-slate-100 rounded-full px-4 py-1.5 border border-transparent focus-within:border-blue-200 focus-within:bg-white focus-within:shadow-sm transition-all">
+              <Search size={16} className="text-slate-400" />
+              <input type="text" placeholder="Search medical data..." className="bg-transparent border-none outline-none px-3 text-sm w-48 lg:w-64" />
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button className="relative p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all">
+                <Bell size={20} />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+              </button>
+              <div className="h-8 w-px bg-slate-200 mx-2 hidden sm:block"></div>
+              <LogOut />
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col lg:flex-row gap-6">
-          <aside className="lg:w-64 flex-shrink-0">
-            <nav className="bg-white rounded-lg border border-gray-200/60 p-1.5 sticky top-20 shadow-sm">
+      <div className="max-w-[1600px] mx-auto flex">
+        {/* Mobile Sidebar Overlay */}
+        {isSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[70] lg:hidden animate-in fade-in duration-300"
+            onClick={() => setIsSidebarOpen(false)}
+          ></div>
+        )}
+
+        {/* Sidebar Navigation */}
+        <aside className={`
+          fixed inset-y-0 left-0 z-[80] w-72 bg-white border-r border-slate-200/60 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:z-auto
+          ${isSidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:translate-x-0"}
+        `}>
+          <div className="sticky top-18 h-[calc(100vh-4.5rem)] flex flex-col p-4">
+            <div className="flex items-center justify-between mb-8 px-2 lg:hidden">
+              <h2 className="font-bold">Navigation</h2>
+              <button onClick={() => setIsSidebarOpen(false)}><X size={20}/></button>
+            </div>
+
+            <nav className="space-y-1.5 flex-1">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-md text-sm font-medium transition-all duration-150 ${activeTab === tab.id
-                      ? "bg-blue-600 text-white shadow-sm"
-                      : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-                    }`}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setIsSidebarOpen(false);
+                  }}
+                  className={`
+                    w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200
+                    ${activeTab === tab.id
+                      ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20 active:scale-95"
+                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                    }
+                  `}
                 >
-                  {tab.icon}
+                  <span className={`${activeTab === tab.id ? "text-white" : "text-slate-400"}`}>
+                    {tab.icon}
+                  </span>
                   <span>{tab.label}</span>
+                  {activeTab === tab.id && (
+                    <div className="ml-auto w-1.5 h-1.5 bg-white rounded-full"></div>
+                  )}
                 </button>
               ))}
             </nav>
-          </aside>
 
-          <main className="flex-1 min-w-0">
-            <div className={`bg-white rounded-2xl border border-gray-200/60 shadow-sm transition-all duration-300 ${activeTab === "chat" ? "pt-6 lg:pt-8 px-0 pb-0 overflow-hidden" : "p-6 lg:p-8"}`}>
-              {activeTab === "dashboard" && <Dashboard />}
-
-              {activeTab === "image" && (
-                <ImageDiagnosis onUploadSuccess={handleDiagnosisSuccess} />
-              )}
-
-              {activeTab === "symptoms" && (
-                <SymptomDiagnosis onDiagnosisSuccess={handleDiagnosisSuccess} />
-              )}
-
-              {activeTab === "results" && (
-                <DiseaseResults detection={latestDetection} refreshTrigger={refreshTrigger} />
-              )}
-
-              {activeTab === "history" && (
-                <DetectionHistory refreshTrigger={refreshTrigger} />
-              )}
-
-              {activeTab === "chat" && <VetChat />}
+            <div className="mt-auto p-4 bg-blue-50 rounded-2xl border border-blue-100/50 relative overflow-hidden group cursor-pointer">
+              <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-blue-600/10 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+              <h4 className="text-xs font-bold text-blue-900 uppercase tracking-widest mb-1 relative z-10">Premium Plan</h4>
+              <p className="text-[11px] text-blue-700 font-medium relative z-10">Advanced AI diagnostics & Unlimited Chat</p>
             </div>
-          </main>
-        </div>
-      </div>
-
-      <footer className="bg-white border-t border-gray-200/60 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-          <div className="text-center text-sm text-gray-500">
-            <p>© 2025 VetAI Diagnostics. AI-Powered Animal Health Detection System</p>
           </div>
-        </div>
-      </footer>
+        </aside>
+
+        {/* Main Content Area */}
+        <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in duration-500">
+          <div className={`
+            bg-white border border-slate-200/60 shadow-xl shadow-slate-900/5 rounded-[2.5rem] transition-all duration-500
+            ${activeTab === "chat" ? "pt-6 lg:pt-8 px-0 pb-0 overflow-hidden" : "p-6 sm:p-8 lg:p-10"}
+          `}>
+            {activeTab === "dashboard" && <Dashboard />}
+            
+            {activeTab === "image" && (
+              <ImageDiagnosis onUploadSuccess={handleDiagnosisSuccess} />
+            )}
+            
+            {activeTab === "symptoms" && (
+              <SymptomDiagnosis onDiagnosisSuccess={handleDiagnosisSuccess} />
+            )}
+            
+            {activeTab === "results" && (
+              <DiseaseResults detection={latestDetection} refreshTrigger={refreshTrigger} />
+            )}
+
+            {activeTab === "history" && (
+              <DetectionHistory refreshTrigger={refreshTrigger} />
+            )}
+
+            {activeTab === "chat" && <VetChat />}
+          </div>
+
+          <footer className="mt-12 text-center text-[11px] font-semibold text-slate-400 uppercase tracking-[0.2em] opacity-60">
+            © 2026 VetAI Diagnostics · Advanced Neural Pathogen Detection
+          </footer>
+        </main>
+      </div>
     </div>
   );
 };
 
 export default Home;
+

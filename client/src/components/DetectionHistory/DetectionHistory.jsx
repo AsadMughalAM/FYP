@@ -1,14 +1,40 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { 
+  Search, 
+  History, 
+  Filter, 
+  ChevronRight, 
+  ChevronDown, 
+  Download, 
+  Calendar,
+  AlertCircle,
+  CheckCircle2,
+  Activity,
+  FileText,
+  Trash2,
+  RefreshCw,
+  ExternalLink
+} from "lucide-react";
 
 const DetectionHistory = ({ refreshTrigger }) => {
   const [history, setHistory] = useState([]);
+  const [filteredHistory, setFilteredHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchHistory();
   }, [refreshTrigger]);
+
+  useEffect(() => {
+    const filtered = history.filter(item => 
+      item.disease_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.animal_name?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredHistory(filtered);
+  }, [searchQuery, history]);
 
   const fetchHistory = async () => {
     try {
@@ -19,241 +45,219 @@ const DetectionHistory = ({ refreshTrigger }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      // Filter out blackleg, mastitis, bloat, and foot rot - keep only foot-and-mouth, lumpy, and healthy
       const excludedDiseases = ['blackleg', 'mastitis', 'bloat', 'foot rot', 'footrot', 'foot_rot', 'foot-rot'];
-      const filteredHistory = (response.data.data || []).filter((detection) => {
+      const rawData = response.data.data || [];
+      const filtered = rawData.filter((detection) => {
         if (!detection.disease_name) return true;
         const lowerName = detection.disease_name.toLowerCase();
         return !excludedDiseases.some(excluded => lowerName.includes(excluded));
       });
       
-      setHistory(filteredHistory);
+      setHistory(filtered);
+      setFilteredHistory(filtered);
     } catch (error) {
-      console.error("Error fetching history:", error);
+      console.error("History fetch error:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const getSeverityColor = (severity) => {
-    const colors = {
-      None: "bg-green-100 text-green-800",
-      Low: "bg-yellow-100 text-yellow-800",
-      Medium: "bg-orange-100 text-orange-800",
-      High: "bg-red-100 text-red-800",
-      Critical: "bg-red-200 text-red-900"
+  const getSeverityStyles = (severity) => {
+    const styles = {
+      None: "bg-emerald-50 text-emerald-700 border-emerald-100",
+      Low: "bg-blue-50 text-blue-700 border-blue-100",
+      Medium: "bg-amber-50 text-amber-700 border-amber-100",
+      High: "bg-orange-50 text-orange-700 border-orange-100",
+      Critical: "bg-red-50 text-red-700 border-red-100"
     };
-    return colors[severity] || "bg-gray-100 text-gray-800";
-  };
-
-  const getStatusIcon = (status) => {
-    const icons = {
-      diagnosed: "🔍",
-      treated: "💊",
-      recovered: "✅",
-      pending: "⏳"
-    };
-    return icons[status] || "📋";
+    return styles[severity] || "bg-slate-50 text-slate-700 border-slate-100";
   };
 
   if (loading) {
     return (
-      <div className="text-center py-16">
-        <div className="inline-block animate-spin">🔄</div>
-        <p className="text-gray-600 mt-2">Loading detection history...</p>
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+        <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Accessing Medical Archives...</p>
       </div>
     );
   }
 
   if (history.length === 0) {
     return (
-      <div className="text-center py-16">
-        <div className="text-6xl mb-4">📭</div>
-        <h3 className="text-2xl font-bold text-gray-700 mb-2">No Detection History</h3>
-        <p className="text-gray-500">Start by uploading an animal image to get your first diagnosis</p>
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-[2rem] flex items-center justify-center mb-6">
+          <History size={40} />
+        </div>
+        <h3 className="text-xl font-bold text-slate-900 mb-2">No Records Found</h3>
+        <p className="text-slate-500 max-w-xs mx-auto">Your medical detection history is currently empty. Complete a scan to see it here.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-xl font-semibold text-gray-900">
-          Detection History ({history.length})
-        </h3>
+    <div className="space-y-6">
+      {/* Search and Filters */}
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+        <div className="relative w-full sm:w-96">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <input 
+            type="text" 
+            placeholder="Search records by species or condition..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
+          />
+        </div>
+        
         <button
           onClick={fetchHistory}
-          className="px-3.5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors duration-150"
+          className="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm active:scale-95"
         >
-          🔄 Refresh
+          <RefreshCw size={14} />
+          REFRESH
         </button>
       </div>
 
-      {/* Table View */}
-      <div className="overflow-x-auto rounded-lg border border-gray-200/60">
-        <table className="w-full">
-          <thead className="bg-gray-50/50 border-b border-gray-200/60">
-            <tr>
-              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-700">Date</th>
-              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-700">Disease</th>
-              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-700">Confidence</th>
-              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-700">Severity</th>
-              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-700">Status</th>
-              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-700">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200/60">
-            {history.map((detection) => (
-              <tr key={detection.id} className="hover:bg-gray-50/50 transition-colors">
-                <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-700">
-                  {new Date(detection.created_at).toLocaleDateString()}
-                </td>
-                <td className="px-4 py-3 text-xs font-medium text-gray-900">
-                  {detection.disease_name}
-                </td>
-                <td className="px-4 py-3 text-xs text-gray-700">
-                  <div className="w-20 bg-gray-200/60 rounded-full h-1.5 mb-1">
-                    <div
-                      className="bg-blue-600 h-1.5 rounded-full"
-                      style={{ width: `${detection.confidence_score * 100}%` }}
-                    ></div>
-                  </div>
-                  <span className="text-xs text-gray-600">
-                    {(detection.confidence_score * 100).toFixed(1)}%
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-xs">
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getSeverityColor(detection.severity)}`}>
-                    {detection.severity}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-xs">
-                  <span className="flex items-center gap-1">
-                    {getStatusIcon(detection.status)}
-                    <span className="capitalize">{detection.status}</span>
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-xs">
-                  <button
-                    onClick={() => setSelectedId(selectedId === detection.id ? null : detection.id)}
-                    className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
-                  >
-                    {selectedId === detection.id ? "Hide" : "View"}
-                  </button>
-                </td>
+      {/* History Table */}
+      <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/50 border-b border-slate-100">
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Diagnostic Date</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Subject & Strain</th>
+                <th className="px-6 px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Neural Confidence</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Risk Level</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredHistory.map((item) => (
+                <React.Fragment key={item.id}>
+                  <tr className={`group hover:bg-slate-50/50 transition-colors cursor-pointer ${selectedId === item.id ? 'bg-blue-50/30' : ''}`} onClick={() => setSelectedId(selectedId === item.id ? null : item.id)}>
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-slate-100 text-slate-500 rounded-xl group-hover:bg-white group-hover:text-blue-600 transition-colors">
+                          <Calendar size={16} />
+                        </div>
+                        <span className="text-xs font-bold text-slate-700">{new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-black text-slate-900 tracking-tight">{item.disease_name}</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{item.animal_name}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 max-w-[80px] h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-600 rounded-full" style={{ width: `${item.confidence_score * 100}%` }}></div>
+                        </div>
+                        <span className="text-xs font-black text-slate-900">{(item.confidence_score * 100).toFixed(0)}%</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getSeverityStyles(item.severity)}`}>
+                        {item.severity}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-slate-100 text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                        {selectedId === item.id ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                      </div>
+                    </td>
+                  </tr>
+                  
+                  {/* Expanded Detail View */}
+                  {selectedId === item.id && (
+                    <tr>
+                      <td colSpan="5" className="px-8 py-8 bg-slate-50/50 border-t border-blue-100">
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 animate-in slide-in-from-top-4 duration-500">
+                          {/* Image Preview */}
+                          <div className="md:col-span-4">
+                            <div className="relative group overflow-hidden rounded-[2rem] border-4 border-white shadow-xl">
+                              {item.image ? (
+                                <img src={item.image} alt="Diagnosis Evidence" className="w-full aspect-square object-cover" />
+                              ) : (
+                                <div className="aspect-square bg-slate-100 flex flex-col items-center justify-center text-slate-300">
+                                  <FileText size={48} />
+                                  <span className="text-xs mt-2 font-bold uppercase tracking-widest">No Visual Evidence</span>
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <ExternalLink className="text-white" size={24} />
+                              </div>
+                            </div>
+                          </div>
 
-      {/* Detailed View */}
-      {selectedId && (
-        <div className="bg-blue-50/50 rounded-lg p-5 border border-blue-200/60 mt-4">
-          {history
-            .filter((d) => d.id === selectedId)
-            .map((detection) => (
-              <div key={detection.id} className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-base font-semibold text-blue-900">{detection.disease_name}</h4>
-                  <button
-                    onClick={() => setSelectedId(null)}
-                    className="text-blue-600 hover:text-blue-700 transition-colors"
-                  >
-                    ✕
-                  </button>
-                </div>
+                          {/* Data Insights */}
+                          <div className="md:col-span-8 space-y-6">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-xl font-black text-slate-900 tracking-tight">Diagnostic Summary</h4>
+                              <span className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center gap-2 ${item.status === 'recovered' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                                <Activity size={14} />
+                                {item.status}
+                              </span>
+                            </div>
 
-                {detection.image && (
-                  <img
-                    src={detection.image}
-                    alt="Animal"
-                    className="w-full max-h-64 object-cover rounded-lg border border-gray-200"
-                  />
-                )}
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-sm">
+                                <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                  <AlertCircle size={12} className="text-amber-500" />
+                                  Observed Symptoms
+                                </h5>
+                                <ul className="space-y-1.5">
+                                  {item.symptoms?.slice(0, 4).map((s, idx) => (
+                                    <li key={idx} className="text-xs font-bold text-slate-700 flex gap-2">
+                                      <span className="text-blue-500">•</span> {s}
+                                    </li>
+                                  )) || <li className="text-xs text-slate-400 italic">No symptoms recorded</li>}
+                                </ul>
+                              </div>
+                              <div className="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-sm">
+                                <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                  <CheckCircle2 size={12} className="text-emerald-500" />
+                                  Treatment Status
+                                </h5>
+                                <p className="text-xs font-medium text-slate-600 leading-relaxed">
+                                  {item.treatment?.[0] || "No treatment protocol initiated for this case record."}
+                                </p>
+                              </div>
+                            </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white p-3 rounded-lg border border-gray-200/60">
-                    <p className="text-xs text-gray-600 mb-1">Confidence</p>
-                    <p className="text-xl font-semibold text-blue-600">
-                      {(detection.confidence_score * 100).toFixed(1)}%
-                    </p>
-                  </div>
-                  <div className="bg-white p-3 rounded-lg border border-gray-200/60">
-                    <p className="text-xs text-gray-600 mb-1">Severity</p>
-                    <p className="text-xl font-semibold text-red-600">{detection.severity}</p>
-                  </div>
-                </div>
-
-                {detection.symptoms && detection.symptoms.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <p className="text-xs font-medium text-blue-900">Symptoms:</p>
-                      <span className="text-xs bg-blue-200/60 text-blue-800 px-2 py-0.5 rounded-full">AI-Generated</span>
-                    </div>
-                    <ul className="space-y-1">
-                      {detection.symptoms.map((symptom, idx) => (
-                        <li key={idx} className="text-xs text-blue-800">• {symptom}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {detection.treatment && detection.treatment.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <p className="text-xs font-medium text-blue-900">Treatment:</p>
-                      <span className="text-xs bg-green-200/60 text-green-800 px-2 py-0.5 rounded-full">AI-Generated</span>
-                    </div>
-                    <ol className="space-y-1 list-decimal list-inside">
-                      {detection.treatment.map((treatment, idx) => (
-                        <li key={idx} className="text-xs text-blue-800">{treatment}</li>
-                      ))}
-                    </ol>
-                  </div>
-                )}
-
-                {detection.prevention && detection.prevention.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <p className="text-xs font-medium text-blue-900">Prevention:</p>
-                      <span className="text-xs bg-indigo-200/60 text-indigo-800 px-2 py-0.5 rounded-full">AI-Generated</span>
-                    </div>
-                    <ul className="space-y-1">
-                      {detection.prevention.map((item, idx) => (
-                        <li key={idx} className="text-xs text-blue-800">✓ {item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {detection.antibiotics && detection.antibiotics.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <p className="text-xs font-medium text-blue-900">Antibiotics:</p>
-                      <span className="text-xs bg-purple-200/60 text-purple-800 px-2 py-0.5 rounded-full">AI-Generated</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {detection.antibiotics.map((antibiotic, idx) => (
-                        <span key={idx} className="text-xs bg-purple-100/60 text-purple-800 px-2 py-1 rounded-full">
-                          {antibiotic}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {detection.contagious && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                    <p className="text-xs font-medium text-red-900">⚠️ Contagious Disease - Isolate immediately</p>
-                  </div>
-                )}
-              </div>
-            ))}
+                            <div className="flex gap-3">
+                              <button className="flex-1 flex items-center justify-center gap-2 py-3 bg-blue-600 text-white rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-[0.98]">
+                                <Download size={14} />
+                                Download PDF Report
+                              </button>
+                              <button className="px-4 py-3 bg-slate-100 text-slate-500 rounded-2xl hover:bg-red-50 hover:text-red-600 transition-all active:scale-95">
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
         </div>
-      )}
+        
+        {/* Pagination/Footer */}
+        <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Showing {filteredHistory.length} of {history.length} cases</span>
+          <div className="flex gap-2">
+            <button className="p-2 text-slate-400 hover:text-blue-600 disabled:opacity-30" disabled><ChevronRight size={18} className="rotate-180" /></button>
+            <button className="p-2 text-slate-400 hover:text-blue-600 disabled:opacity-30" disabled><ChevronRight size={18} /></button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
 
 export default DetectionHistory;
+

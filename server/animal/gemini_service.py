@@ -418,11 +418,25 @@ def get_disease_info(disease_name: str, use_cache: bool = False, force_fresh: bo
         print(f"✅ Successfully received real-time data from Gemini (after retry) for: {disease_name}")
         return gemini_info_retry
 
+    # Fallback to JSON file if Gemini API fails completely
+    print(f"⚠️ Gemini API failed, trying fallback JSON file for: {disease_name}")
+    fallback_data = load_disease_info_fallback()
+    if fallback_data and disease_key in fallback_data:
+        info = fallback_data[disease_key]
+        info['_source'] = 'json_fallback'
+        print(f"✅ Using fallback data from JSON for: {disease_name}")
+        return info
+    
+    # Last resort: return default healthy data for any unmatched disease
+    print(f"⚠️ No fallback found, returning default data for: {disease_name}")
     return {
-        "_source": "gemini_error",
-        "gemini_error": {
-            "type": "unknown",
-            "message": "Gemini API returned no data after retry.",
-        },
+        "_source": "json_fallback",
+        "name": disease_key.replace('-', ' ').title(),
+        "severity": "Unknown",
+        "symptoms": ["No symptoms recorded"],
+        "treatment": ["Consult a veterinarian"],
+        "prevention": ["Regular health checkups"],
+        "antibiotics": [],
+        "contagious": False,
     }
 

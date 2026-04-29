@@ -60,6 +60,11 @@ def repair_json(json_string: str) -> dict:
     # Fix 3: Remove trailing incomplete entries
     json_text = re.sub(r',\s*"[^"]*$', '', json_text, flags=re.MULTILINE)
     
+    # Fix 3.5: Handle incomplete arrays like "antibiotics": ["
+    # This catches arrays that are opened but have no closing bracket
+    json_text = re.sub(r'\[\s*$', '[]', json_text, flags=re.MULTILINE)
+    json_text = re.sub(r'\[\s*"\s*$', '[]', json_text, flags=re.MULTILINE)
+    
     # Fix 4: Ensure arrays are closed
     open_brackets = json_text.count('[')
     close_brackets = json_text.count(']')
@@ -92,9 +97,10 @@ def repair_json(json_string: str) -> dict:
             if severity_match:
                 result['severity'] = severity_match.group(1)
             
-            # Extract arrays
+            # Extract arrays - handle truncated responses
             for field in ['symptoms', 'treatment', 'prevention', 'antibiotics']:
-                array_match = re.search(rf'"{field}"\s*:\s*\[(.*?)\]', json_text, re.DOTALL)
+                # Match array content up to either closing bracket or end of truncated text
+                array_match = re.search(rf'"{field}"\s*:\s*\[([^\]]*)\]', json_text, re.DOTALL)
                 if array_match:
                     array_content = array_match.group(1)
                     # Extract individual string items

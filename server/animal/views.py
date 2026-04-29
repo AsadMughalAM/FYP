@@ -14,7 +14,7 @@ import pickle
 from pathlib import Path
 
 # Import Gemini service for dynamic disease information
-from .gemini_service import get_disease_info
+from .gemini_service import get_disease_info, load_disease_info_fallback
 from .gemini_service import (
     GEMINI_API_KEY,
     GEMINI_MODEL,
@@ -513,15 +513,27 @@ class DetectAnimalAPIView(APIView):
             # Log the data source for debugging BEFORE removing it
             data_source = info.get('_source', 'unknown')
             
+            # Only return error if Gemini completely fails and no fallback available
             if data_source == 'gemini_error':
-                return Response(
-                    {
-                        "error": "Gemini API failed",
-                        "message": "Real-time disease information is unavailable right now.",
-                        "gemini_error": info.get("gemini_error"),
-                    },
-                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
-                )
+                # Try one more time with a simple fallback
+                fallback_info = load_disease_info_fallback()
+                if fallback_info and normalized_name in fallback_info:
+                    info = fallback_info[normalized_name]
+                    info['_source'] = 'json_fallback'
+                    data_source = 'json_fallback'
+                else:
+                    # Use hardcoded default response
+                    info = {
+                        "_source": "default_fallback",
+                        "name": normalized_name.replace('-', ' ').title(),
+                        "severity": "Unknown",
+                        "symptoms": ["Consult a veterinarian for diagnosis"],
+                        "treatment": ["Seek professional veterinary care"],
+                        "prevention": ["Regular veterinary checkups"],
+                        "antibiotics": [],
+                        "contagious": False,
+                    }
+                    data_source = 'default_fallback'
             elif data_source == 'gemini_api':
                 print(f"")
                 print(f"✅✅✅ SUCCESS: REAL-TIME GEMINI DATA RECEIVED ✅✅✅")

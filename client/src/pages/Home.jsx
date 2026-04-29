@@ -104,11 +104,10 @@ const Home = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-md text-sm font-medium transition-all duration-150 ${
-                    activeTab === tab.id
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-md text-sm font-medium transition-all duration-150 ${activeTab === tab.id
                       ? "bg-blue-600 text-white shadow-sm"
                       : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
+                    }`}
                 >
                   {tab.icon}
                   <span>{tab.label}</span>
@@ -118,17 +117,17 @@ const Home = () => {
           </aside>
 
           <main className="flex-1 min-w-0">
-            <div className="bg-white rounded-lg border border-gray-200/60 shadow-sm p-6 lg:p-8">
+            <div className={`bg-white rounded-2xl border border-gray-200/60 shadow-sm transition-all duration-300 ${activeTab === "chat" ? "pt-6 lg:pt-8 px-0 pb-0 overflow-hidden" : "p-6 lg:p-8"}`}>
               {activeTab === "dashboard" && <Dashboard />}
-              
+
               {activeTab === "image" && (
                 <ImageDiagnosis onUploadSuccess={handleDiagnosisSuccess} />
               )}
-              
+
               {activeTab === "symptoms" && (
                 <SymptomDiagnosis onDiagnosisSuccess={handleDiagnosisSuccess} />
               )}
-              
+
               {activeTab === "results" && (
                 <DiseaseResults detection={latestDetection} refreshTrigger={refreshTrigger} />
               )}

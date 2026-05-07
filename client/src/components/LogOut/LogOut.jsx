@@ -8,7 +8,6 @@ const LogOut = () => {
   const handleLogout = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
-    localStorage.removeItem("google_token");
     navigate("/signin");
   };
 
@@ -23,4 +22,4 @@ const LogOut = () => {
   );
 }
 
-export default LogOut;
+export default LogOut;

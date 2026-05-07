@@ -3,8 +3,6 @@ import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-import { GoogleLogin } from "@react-oauth/google";
-import { jwtDecode } from "jwt-decode";
 import { Loader2, Mail, Lock, User } from "lucide-react";
 
 const SignIn = () => {
@@ -37,17 +35,6 @@ const SignIn = () => {
   const onSubmit = (data) => {
     setApiError(null);
     mutation.mutate(data);
-  };
-
-  const handleGoogleLogin = (credentialResponse) => {
-    try {
-      const decoded = jwtDecode(credentialResponse.credential);
-      console.log("Google user:", decoded);
-      localStorage.setItem("google_token", credentialResponse.credential);
-      navigate("/");
-    } catch (error) {
-      alert(`Google login failed: ${error.message}`);
-    }
   };
 
   const isLoading = mutation.isPending;
@@ -83,11 +70,10 @@ const SignIn = () => {
                   placeholder="Enter your username"
                   disabled={isLoading}
                   {...register("username", { required: "Username is required" })}
-                  className={`w-full pl-11 pr-4 py-3 text-sm rounded-xl border bg-white transition-all outline-none ring-offset-2 ${
-                    errors.username 
-                      ? "border-red-200 focus:ring-2 focus:ring-red-100 focus:border-red-400" 
+                  className={`w-full pl-11 pr-4 py-3 text-sm rounded-xl border bg-white transition-all outline-none ring-offset-2 ${errors.username
+                      ? "border-red-200 focus:ring-2 focus:ring-red-100 focus:border-red-400"
                       : "border-slate-200 focus:ring-4 focus:ring-blue-50/50 focus:border-blue-500"
-                  } ${isLoading ? "bg-slate-50 cursor-not-allowed opacity-70" : ""}`}
+                    } ${isLoading ? "bg-slate-50 cursor-not-allowed opacity-70" : ""}`}
                 />
               </div>
               {errors.username && (
@@ -106,11 +92,10 @@ const SignIn = () => {
                   placeholder="••••••••"
                   disabled={isLoading}
                   {...register("password", { required: "Password is required", minLength: { value: 8, message: "Minimum 8 characters" } })}
-                  className={`w-full pl-11 pr-4 py-3 text-sm rounded-xl border bg-white transition-all outline-none ring-offset-2 ${
-                    errors.password 
-                      ? "border-red-200 focus:ring-2 focus:ring-red-100 focus:border-red-400" 
+                  className={`w-full pl-11 pr-4 py-3 text-sm rounded-xl border bg-white transition-all outline-none ring-offset-2 ${errors.password
+                      ? "border-red-200 focus:ring-2 focus:ring-red-100 focus:border-red-400"
                       : "border-slate-200 focus:ring-4 focus:ring-blue-50/50 focus:border-blue-500"
-                  } ${isLoading ? "bg-slate-50 cursor-not-allowed opacity-70" : ""}`}
+                    } ${isLoading ? "bg-slate-50 cursor-not-allowed opacity-70" : ""}`}
                 />
               </div>
               {errors.password && (
@@ -118,12 +103,11 @@ const SignIn = () => {
               )}
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={isLoading}
-              className={`w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-[0_4px_12px_rgba(37,99,235,0.2)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.25)] transition-all duration-200 flex items-center justify-center gap-2 ${
-                isLoading ? "opacity-80 cursor-not-allowed transform-none" : "active:scale-[0.98]"
-              }`}
+              className={`w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-[0_4px_12px_rgba(37,99,235,0.2)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.25)] transition-all duration-200 flex items-center justify-center gap-2 ${isLoading ? "opacity-80 cursor-not-allowed transform-none" : "active:scale-[0.98]"
+                }`}
             >
               {isLoading ? (
                 <>
@@ -136,23 +120,10 @@ const SignIn = () => {
             </button>
           </form>
 
-          <div className="relative flex items-center justify-center mb-8">
-            <div className="border-t border-slate-100 w-full"></div>
-            <span className="absolute px-4 bg-white text-[11px] font-bold text-slate-400 uppercase tracking-widest">or continue with</span>
-          </div>
+
 
           <div className="space-y-6">
-            {import.meta.env.VITE_GOOGLE_CLIENT_ID ? (
-              <div className="flex justify-center">
-                <GoogleLogin onSuccess={handleGoogleLogin} onError={() => alert("Google login failed")} theme="outline" shape="pill" />
-              </div>
-            ) : (
-              <div className="text-center py-2 px-4 rounded-lg bg-slate-50 border border-slate-100">
-                 <p className="text-xs text-slate-400 italic">Google login not configured</p>
-              </div>
-            )}
-
-            <p className="text-center text-sm text-slate-500 pt-6 border-t border-slate-50">
+            <p className="text-center text-sm text-slate-500 pt-3 border-t border-slate-50">
               Don't have an account?{" "}
               <Link to="/signup" className="text-blue-600 font-bold hover:text-blue-700 transition-colors">
                 Create account

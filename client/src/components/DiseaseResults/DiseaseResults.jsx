@@ -161,21 +161,6 @@ const DiseaseResults = ({ detection, refreshTrigger }) => {
 
         {/* Sidebar Data Column */}
         <div className="lg:col-span-4 space-y-6">
-          {/* Visual Evidence */}
-          <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-              <h5 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Medical Evidence</h5>
-              <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] rounded-full">RAW DATA</span>
-            </div>
-            <div className="p-4">
-              {result.image ? (
-                <img src={result.image} alt="Diagnosis" className="w-full h-48 object-cover rounded-2xl" />
-              ) : (
-                <div className="w-full h-48 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 italic text-sm">No image available</div>
-              )}
-            </div>
-          </div>
-
           {/* Prediction Matrix */}
           <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
             <h5 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-4">Neural Probability</h5>

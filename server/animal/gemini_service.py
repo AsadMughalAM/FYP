@@ -28,6 +28,98 @@ _cache_timestamps: Dict[str, datetime] = {}
 CACHE_DURATION = timedelta(hours=24)
 
 
+def _build_gemini_prompt(readable_name: str, symptoms: List[str] = None, compact: bool = False) -> str:
+    """Build a strict Gemini prompt for machine-parseable disease data."""
+    symptoms_context = ""
+    if symptoms:
+        symptoms_context = f" Observed symptoms: {', '.join(symptoms)}."
+
+    if compact:
+        return f"""Return ONLY minified valid JSON for {readable_name} in cattle.{symptoms_context}
+Use exactly this structure:
+{{"name":"", "severity":"None|Low|Medium|High|Critical", "symptoms":["","",""], "treatment":["","",""], "prevention":["","",""], "contagious":false, "antibiotics":["",""]}}
+Rules: no markdown, no explanation, no extra keys, all strings in double quotes, each item under 40 characters, keep answers concise, finish the full JSON object."""
+
+    return f"""You are a veterinary expert specializing in livestock health. Provide detailed, accurate information about {readable_name} in cattle/cows.{symptoms_context}
+
+CRITICAL: You MUST return ONLY valid JSON. No markdown, no code blocks, no explanations. Start with {{ and end with }}.
+
+Required JSON format:
+{{
+    "name": "Full official disease name",
+    "severity": "None/Low/Medium/High/Critical",
+    "symptoms": ["symptom 1", "symptom 2", "symptom 3"],
+    "treatment": ["treatment step 1", "treatment step 2", "treatment step 3"],
+    "prevention": ["prevention method 1", "prevention method 2", "prevention method 3"],
+    "contagious": true or false,
+    "antibiotics": ["antibiotic 1", "antibiotic 2"]
+}}
+
+IMPORTANT JSON RULES:
+1. All strings must be in double quotes
+2. No line breaks inside string values - use spaces instead
+3. No special characters that break JSON (like unescaped quotes)
+4. Keep symptom/treatment/prevention text short (max 100 characters each)
+5. Arrays must be properly closed with ]
+6. Object must be properly closed with }}
+
+SPECIFIC GUIDELINES:
+- For healthy animals: severity="None", symptoms=["Normal appearance", "Good body condition", "Active behavior"], contagious=false
+- Be medically accurate with proper veterinary terminology
+- Include exactly 3 items in each array: symptoms, treatment, prevention
+- Keep each item concise and clear (max 60 chars)
+- Treatment steps should be actionable
+- Prevention methods should be practical
+
+Return ONLY valid JSON starting with {{ and ending with }}. No other text."""
+
+
+def _build_gemini_request_body(prompt: str, compact: bool = False) -> Dict:
+    """Build Gemini request payload."""
+    return {
+        "contents": [
+            {
+                "role": "user",
+                "parts": [{"text": prompt}]
+            }
+        ],
+        "generationConfig": {
+            "temperature": 0.1 if compact else 0.3,
+            "topK": 20 if compact else 40,
+            "topP": 0.8 if compact else 0.95,
+            "maxOutputTokens": 768 if compact else 1024,
+            "responseMimeType": "application/json",
+        },
+        "safetySettings": [
+            {
+                "category": "HARM_CATEGORY_HARASSMENT",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+            },
+            {
+                "category": "HARM_CATEGORY_HATE_SPEECH",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+            },
+            {
+                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+            },
+            {
+                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+            },
+        ],
+    }
+
+
+def _has_complete_disease_payload(disease_info: Dict) -> bool:
+    """Check whether Gemini returned the fields the UI relies on most."""
+    required_list_fields = ['symptoms', 'treatment', 'prevention']
+    return all(
+        isinstance(disease_info.get(field), list) and len(disease_info.get(field, [])) > 0
+        for field in required_list_fields
+    )
+
+
 def load_disease_info_fallback():
     """Load disease information from JSON as fallback"""
     try:
@@ -37,7 +129,11 @@ def load_disease_info_fallback():
         return {}
 
 
-def get_disease_info_from_gemini(disease_name: str, symptoms: List[str] = None) -> Optional[Dict]:
+def get_disease_info_from_gemini(
+    disease_name: str,
+    symptoms: List[str] = None,
+    compact_mode: bool = False,
+) -> Optional[Dict]:
     """
     Fetch disease information from Gemini API
     
@@ -71,77 +167,8 @@ def get_disease_info_from_gemini(disease_name: str, symptoms: List[str] = None) 
         elif disease_key == 'lumpy':
             readable_name = 'Lumpy Skin Disease'
         
-        # Create comprehensive prompt for Gemini with strict JSON formatting
-        symptoms_context = ""
-        if symptoms:
-            symptoms_context = f" The observed symptoms are: {', '.join(symptoms)}."
-            
-        prompt = f"""You are a veterinary expert specializing in livestock health. Provide detailed, accurate information about {readable_name} in cattle/cows.{symptoms_context}
-
-CRITICAL: You MUST return ONLY valid JSON. No markdown, no code blocks, no explanations. Start with {{ and end with }}.
-
-Required JSON format:
-{{
-    "name": "Full official disease name",
-    "severity": "None/Low/Medium/High/Critical",
-    "symptoms": ["symptom 1", "symptom 2", "symptom 3"],
-    "treatment": ["treatment step 1", "treatment step 2", "treatment step 3"],
-    "prevention": ["prevention method 1", "prevention method 2", "prevention method 3"],
-    "contagious": true or false,
-    "antibiotics": ["antibiotic 1", "antibiotic 2"]
-}}
-
-IMPORTANT JSON RULES:
-1. All strings must be in double quotes
-2. No line breaks inside string values - use spaces instead
-3. No special characters that break JSON (like unescaped quotes)
-4. Keep symptom/treatment/prevention text short (max 100 characters each)
-5. Arrays must be properly closed with ]
-6. Object must be properly closed with }}
-
-SPECIFIC GUIDELINES:
-- For healthy animals: severity="None", symptoms=["Normal appearance", "Good body condition", "Active behavior"], contagious=false
-- Be medically accurate with proper veterinary terminology
-- Include exactly 3 items in each array: symptoms, treatment, prevention
-- Keep each item concise and clear (max 60 chars)
-- Treatment steps should be actionable
-- Prevention methods should be practical
-
-Return ONLY valid JSON starting with {{ and ending with }}. No other text."""
-
-        # Prepare request
-        request_body = {
-            "contents": [
-                {
-                    "role": "user",
-                    "parts": [{"text": prompt}]
-                }
-            ],
-            "generationConfig": {
-                "temperature": 0.3,
-                "topK": 40,
-                "topP": 0.95,
-                "maxOutputTokens": 1024,
-            },
-            "safetySettings": [
-                {
-                    "category": "HARM_CATEGORY_HARASSMENT",
-                    "threshold": "BLOCK_MEDIUM_AND_ABOVE",
-                },
-                {
-                    "category": "HARM_CATEGORY_HATE_SPEECH",
-                    "threshold": "BLOCK_MEDIUM_AND_ABOVE",
-                },
-                {
-                    "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                    "threshold": "BLOCK_MEDIUM_AND_ABOVE",
-                },
-                {
-                    "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
-                    "threshold": "BLOCK_MEDIUM_AND_ABOVE",
-                },
-            ],
-        }
+        prompt = _build_gemini_prompt(readable_name, symptoms=symptoms, compact=compact_mode)
+        request_body = _build_gemini_request_body(prompt, compact=compact_mode)
 
         # Try primary model first, then any optional fallback models from env.
         fallback_models_raw = os.environ.get('GEMINI_FALLBACK_MODELS', '')
@@ -151,6 +178,7 @@ Return ONLY valid JSON starting with {{ and ending with }}. No other text."""
         models_to_try = [GEMINI_MODEL, *fallback_models]
         
         print(f"🔍 Calling Gemini API for disease: {disease_name} -> {readable_name}")
+        print(f"🔍 Prompt mode: {'compact' if compact_mode else 'standard'}")
         print(f"🔍 Model candidates: {models_to_try}")
 
         response = None
@@ -265,6 +293,9 @@ Return ONLY valid JSON starting with {{ and ending with }}. No other text."""
         try:
             if 'candidates' in data and len(data['candidates']) > 0:
                 candidate = data['candidates'][0]
+                finish_reason = candidate.get('finishReason')
+                if finish_reason:
+                    logger.info(f"Gemini finish reason for '{disease_name}': {finish_reason}")
                 if 'content' in candidate and 'parts' in candidate['content']:
                     if len(candidate['content']['parts']) > 0:
                         if 'text' in candidate['content']['parts'][0]:
@@ -303,11 +334,15 @@ Return ONLY valid JSON starting with {{ and ending with }}. No other text."""
             
             # Use safe parser that handles truncated/incomplete JSON
             disease_info = safe_parse_gemini_response(response_text)
+            disease_info['_gemini_finish_reason'] = finish_reason or ''
+            disease_info['_gemini_prompt_mode'] = 'compact' if compact_mode else 'standard'
             
             # Validate structure
             required_fields = ['name', 'severity', 'symptoms', 'treatment', 'prevention']
+            missing_required_fields = []
             for field in required_fields:
                 if field not in disease_info:
+                    missing_required_fields.append(field)
                     print(f"⚠️ Missing required field: {field} - filling with default")
                     # Fill with defaults instead of failing
                     if field == 'name':
@@ -329,6 +364,41 @@ Return ONLY valid JSON starting with {{ and ending with }}. No other text."""
                 disease_info['contagious'] = bool(disease_info['contagious'])
             else:
                 disease_info['contagious'] = False
+
+            # Backfill missing structured fields from the local fallback dataset
+            # when Gemini returns a partial/truncated JSON object.
+            fallback_info = load_disease_info_fallback().get(disease_key, {})
+            if fallback_info:
+                if not disease_info.get('name'):
+                    disease_info['name'] = fallback_info.get('name', readable_name)
+                if disease_info.get('severity') in ('', 'Unknown', None):
+                    disease_info['severity'] = fallback_info.get('severity', 'Unknown')
+                for field in ['symptoms', 'treatment', 'prevention', 'antibiotics']:
+                    if not disease_info.get(field):
+                        fallback_value = fallback_info.get(field, [])
+                        disease_info[field] = fallback_value if isinstance(fallback_value, list) else []
+                if disease_info.get('contagious') is False and fallback_info.get('contagious'):
+                    disease_info['contagious'] = True
+
+            if (
+                not compact_mode
+                and (
+                    finish_reason == 'MAX_TOKENS'
+                    or missing_required_fields
+                    or not _has_complete_disease_payload(disease_info)
+                )
+            ):
+                logger.warning(
+                    f"⚠️ Gemini returned incomplete data for '{disease_name}'. "
+                    f"Retrying with compact prompt."
+                )
+                compact_retry = get_disease_info_from_gemini(
+                    disease_name,
+                    symptoms=symptoms,
+                    compact_mode=True,
+                )
+                if compact_retry and compact_retry.get('_source') != 'gemini_error':
+                    return compact_retry
             
             print(f"✅ Successfully fetched REAL-TIME disease info from Gemini for: {disease_name}")
             disease_info['_source'] = 'gemini_api'  # Mark as real-time Gemini data
@@ -408,14 +478,15 @@ def get_disease_info(disease_name: str, symptoms: List[str] = None, use_cache: b
         if gemini_info.get("_source") == "gemini_error":
             import logging
             logger = logging.getLogger(__name__)
-            logger.error(f"❌ get_disease_info returning gemini_error: {gemini_info.get('gemini_error')}")
+            logger.error(f"⚠️ get_disease_info received gemini_error: {gemini_info.get('gemini_error')}. Proceeding to fallback.")
+            # Don't return error yet, try fallback first
+        else:
+            # Cache the result
+            if use_cache:
+                _disease_info_cache[disease_key] = gemini_info
+                _cache_timestamps[disease_key] = datetime.now()
+            print(f"✅ Successfully received real-time data from Gemini for: {disease_name}")
             return gemini_info
-        # Cache the result (but next call will still be fresh if force_fresh=True)
-        if use_cache:
-            _disease_info_cache[disease_key] = gemini_info
-            _cache_timestamps[disease_key] = datetime.now()
-        print(f"✅ Successfully received real-time data from Gemini for: {disease_name}")
-        return gemini_info
     
     # If Gemini fails, try ONE retry with a slight delay
     print(f"⚠️ First Gemini API call failed, retrying once for: {disease_name}")

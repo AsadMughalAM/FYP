@@ -121,6 +121,46 @@
       "Amoxicillin"
     ]
   },
+  "calf-pneumonia": {
+    "name": "Calf Pneumonia (BRD)",
+    "severity": "High",
+    "symptoms": [
+      "Rapid, labored breathing",
+      "Nasal discharge",
+      "Coughing",
+      "High fever",
+      "Dullness and loss of appetite",
+      "Sunken eyes"
+    ],
+    "causes": [
+      "Mixed viral and bacterial infections",
+      "Poor ventilation",
+      "Stress (transport, weaning)",
+      "Overcrowding",
+      "Inadequate colostrum intake"
+    ],
+    "treatment": [
+      "Antibiotics (as prescribed by vet)",
+      "Anti-inflammatory drugs",
+      "Isolation in a well-ventilated, dry pen",
+      "Rehydration therapy if needed",
+      "Nutritional support"
+    ],
+    "prevention": [
+      "Ensure adequate colostrum at birth",
+      "Good ventilation in calf housing",
+      "Vaccination programs",
+      "Avoid stress and overcrowding",
+      "Maintain strict hygiene"
+    ],
+    "duration": "1-3 weeks",
+    "contagious": true,
+    "antibiotics": [
+      "Tulathromycin",
+      "Florfenicol",
+      "Enrofloxacin"
+    ]
+  },
   "blackleg": {
     "name": "Blackleg",
     "severity": "Critical",

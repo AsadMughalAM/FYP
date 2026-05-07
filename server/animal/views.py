@@ -957,6 +957,15 @@ class DiagnoseAPIView(APIView):
             
             logger.info(f"📤 Sending response with {len(results)} results")
             logger.info(f"📤 Gemini enhanced: {response_data['gemini_enhanced']}")
+            
+            # Detailed logging of the first result's content to verify data presence
+            if len(results) > 0:
+                best = results[0]
+                logger.info(f"📊 Top Match: {best.get('disease_name')}")
+                logger.info(f"📊 Treatment Count: {len(best.get('treatment', []))}")
+                logger.info(f"📊 Medicines Count: {len(best.get('medicines', []))}")
+                logger.info(f"📊 Treatment Sample: {best.get('treatment')[0] if best.get('treatment') else 'N/A'}")
+
             return Response(response_data, status=status.HTTP_200_OK)
             
         except FileNotFoundError as e:

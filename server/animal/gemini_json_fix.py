@@ -20,14 +20,15 @@ def repair_json(json_string: str) -> dict:
     except json.JSONDecodeError:
         pass
     
-    # Find JSON boundaries
+    # Find JSON boundaries. If the response is truncated, we may only have
+    # the opening brace; keep the remaining text and repair it progressively.
     start = json_string.find('{')
     end = json_string.rfind('}')
     
-    if start == -1 or end <= start:
+    if start == -1:
         raise ValueError("No valid JSON structure found")
     
-    json_text = json_string[start:end+1]
+    json_text = json_string[start:end+1] if end > start else json_string[start:]
     
     # Fix 1: Remove incomplete string entries in arrays
     # Pattern: "item1", "item2", "incomplete_string
@@ -99,8 +100,12 @@ def repair_json(json_string: str) -> dict:
             
             # Extract arrays - handle truncated responses
             for field in ['symptoms', 'treatment', 'prevention', 'antibiotics']:
-                # Match array content up to either closing bracket or end of truncated text
-                array_match = re.search(rf'"{field}"\s*:\s*\[([^\]]*)\]', json_text, re.DOTALL)
+                # Match array content up to a closing bracket, the next field, or end of text.
+                array_match = re.search(
+                    rf'"{field}"\s*:\s*\[(.*?)(?:\]|,\s*"[A-Za-z_][A-Za-z0-9_]*"\s*:|$)',
+                    json_text,
+                    re.DOTALL,
+                )
                 if array_match:
                     array_content = array_match.group(1)
                     # Extract individual string items
@@ -140,5 +145,8 @@ def safe_parse_gemini_response(response_text: str) -> dict:
         return json.loads(response_text)
     except json.JSONDecodeError:
         # Try repair
-        return repair_json(response_text)
+        repaired = repair_json(response_text)
+        if not repaired:
+            raise ValueError("No valid JSON fields could be recovered from Gemini response")
+        return repaired
 

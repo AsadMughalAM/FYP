@@ -82,6 +82,113 @@
     ]
   },
   
+  "mastitis": {
+    "name": "Mastitis",
+    "severity": "High",
+    "symptoms": [
+      "Swelling of the udder",
+      "Redness and heat in the udder",
+      "Clotted or discolored milk",
+      "Pain when touched",
+      "Decreased milk yield",
+      "Fever in severe cases"
+    ],
+    "causes": [
+      "Bacterial infection (Staphylococcus, Streptococcus)",
+      "Poor milking hygiene",
+      "Injuries to the teat",
+      "Environmental contamination"
+    ],
+    "treatment": [
+      "Intramammary antibiotics",
+      "Frequent milking of affected quarters",
+      "Anti-inflammatory drugs",
+      "Supportive care",
+      "Veterinary consultation for proper antibiotic selection"
+    ],
+    "prevention": [
+      "Proper milking hygiene (dipping teats)",
+      "Clean housing and bedding",
+      "Dry cow therapy",
+      "Regular equipment maintenance",
+      "Culling chronically infected cows"
+    ],
+    "duration": "1-2 weeks with treatment",
+    "contagious": true,
+    "antibiotics": [
+      "Cloxacillin",
+      "Cephapirin",
+      "Amoxicillin"
+    ]
+  },
+  "blackleg": {
+    "name": "Blackleg",
+    "severity": "Critical",
+    "symptoms": [
+      "Sudden onset of lameness",
+      "Swelling of large muscles",
+      "Crepitus (gas bubbles) under skin",
+      "High fever",
+      "Loss of appetite",
+      "Sudden death (often first sign)"
+    ],
+    "causes": [
+      "Bacterial spores (Clostridium chauvoei)",
+      "Soil contamination",
+      "Ingestion or wound infection"
+    ],
+    "treatment": [
+      "High doses of Penicillin if caught early",
+      "Supportive care",
+      "Treatment is often unsuccessful once clinical signs appear",
+      "Isolate carcass to prevent further soil contamination"
+    ],
+    "prevention": [
+      "VACCINATION (most effective)",
+      "Proper disposal of carcasses (burning/deep burial)",
+      "Avoid grazing on known infected pastures"
+    ],
+    "duration": "12-48 hours (rapidly fatal)",
+    "contagious": false,
+    "antibiotics": [
+      "Penicillin",
+      "Oxytetracycline"
+    ]
+  },
+  
+  "bloat": {
+    "name": "Bloat (Tympany)",
+    "severity": "Critical",
+    "symptoms": [
+      "Distension of the left flank",
+      "Difficulty breathing",
+      "Restlessness and kicking at belly",
+      "Frequent urination and defecation",
+      "Collapse and death in severe cases"
+    ],
+    "causes": [
+      "Excessive gas accumulation in rumen",
+      "Lush legume pastures (clover/alfalfa)",
+      "Obstruction of the esophagus",
+      "High grain diets"
+    ],
+    "treatment": [
+      "Use of stomach tube to release gas",
+      "Anti-foaming agents (drenching with oil)",
+      "Trocar and cannula in emergency cases",
+      "Walking the animal",
+      "Veterinary emergency assistance required"
+    ],
+    "prevention": [
+      "Gradual introduction to lush pastures",
+      "Feeding hay before turning out to pasture",
+      "Use of anti-bloat supplements",
+      "Monitoring during high-risk periods"
+    ],
+    "duration": "Acute (minutes to hours)",
+    "contagious": false,
+    "antibiotics": []
+  },
   "healthy": {
     "name": "Healthy",
     "severity": "None",

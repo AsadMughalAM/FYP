@@ -65,18 +65,8 @@ const Home = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-6">
-            <div className="hidden md:flex items-center bg-slate-100 rounded-full px-4 py-1.5 border border-transparent focus-within:border-blue-200 focus-within:bg-white focus-within:shadow-sm transition-all">
-              <Search size={16} className="text-slate-400" />
-              <input type="text" placeholder="Search medical data..." className="bg-transparent border-none outline-none px-3 text-sm w-48 lg:w-64" />
-            </div>
-            
+          <div className="flex items-center gap-3 sm:gap-6">  
             <div className="flex items-center gap-2">
-              <button className="relative p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all">
-                <Bell size={20} />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-              </button>
-              <div className="h-8 w-px bg-slate-200 mx-2 hidden sm:block"></div>
               <LogOut />
             </div>
           </div>
@@ -139,9 +129,9 @@ const Home = () => {
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in duration-500">
+        <main className="flex-1 min-w-0     animate-in fade-in duration-500">
           <div className={`
-            bg-white border border-slate-200/60 shadow-xl shadow-slate-900/5 rounded-[2.5rem] transition-all duration-500
+            bg-white border border-slate-200/60 shadow-xl shadow-slate-900/5  transition-all duration-500
             ${activeTab === "chat" ? "pt-6 lg:pt-8 px-0 pb-0 overflow-hidden" : "p-6 sm:p-8 lg:p-10"}
           `}>
             {activeTab === "dashboard" && <Dashboard />}
@@ -165,7 +155,7 @@ const Home = () => {
             {activeTab === "chat" && <VetChat />}
           </div>
 
-          <footer className="mt-12 text-center text-[11px] font-semibold text-slate-400 uppercase tracking-[0.2em] opacity-60">
+          <footer className="bg-[#FFFFFF] text-center p-2  text-[11px] font-semibold text-slate-400 uppercase tracking-[0.2em] opacity-60">
             © 2026 VetAI Diagnostics · Advanced Neural Pathogen Detection
           </footer>
         </main>

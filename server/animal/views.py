@@ -873,28 +873,25 @@ class DiagnoseAPIView(APIView):
             logger.info(f"🔄 Disease Name: {disease_name_from_result}")
             
             # Use disease_id if available, otherwise use disease_name
-            gemini_disease_key = disease_id if disease_id else disease_name_from_result.lower().replace(' ', '-')
+            gemini_disease_key = (disease_id if disease_id else disease_name_from_result).lower().strip().replace('_', '-').replace(' ', '-')
             
             from .gemini_service import GEMINI_API_KEY, GEMINI_MODEL
-            logger.info(f"🔄 Calling Gemini API for: {gemini_disease_key}")
-            logger.info(f"🔄 Model: {GEMINI_MODEL}")
+            logger.info(f"🔄 Requesting Gemini info for key: '{gemini_disease_key}'")
+            logger.info(f"🔄 Using symptoms for context: {symptoms}")
             
-            gemini_info = get_disease_info(gemini_disease_key, use_cache=False, force_fresh=True)
+            # Fetch with symptoms context for better reliability
+            gemini_info = get_disease_info(gemini_disease_key, symptoms=symptoms, use_cache=False, force_fresh=True)
             
             # Log the data source
             data_source = gemini_info.get('_source', 'unknown')
+            logger.info(f"📊 Gemini Data Source: {data_source}")
             logger.info(f"🔄 Data source: {data_source}")
             
-            # Use Gemini data if available, otherwise fallback to dataset processor data
-            if data_source == 'gemini_api':
-                logger.info(f"✅✅✅ SUCCESS: REAL-TIME GEMINI DATA RECEIVED ✅✅✅")
-                logger.info(f"✅ Disease: {gemini_info.get('name', disease_name_from_result)}")
-                logger.info(f"✅ Severity: {gemini_info.get('severity', 'Unknown')}")
-                logger.info(f"✅ Treatment count: {len(gemini_info.get('treatment', []))}")
-                logger.info(f"✅ Prevention count: {len(gemini_info.get('prevention', []))}")
-                logger.info(f"✅ Medicines count: {len(gemini_info.get('antibiotics', []))}")
+            # Use Gemini data if available, or any valid fallback data (not an error)
+            if data_source != 'gemini_error':
+                logger.info(f"✅ Using disease information from: {data_source}")
                 
-                # Update best_result with Gemini data
+                # Update best_result with Gemini or fallback data
                 best_result['disease_name'] = gemini_info.get('name', disease_name_from_result)
                 best_result['severity'] = gemini_info.get('severity', 'Unknown')
                 best_result['treatment'] = gemini_info.get('treatment', [])
@@ -902,10 +899,11 @@ class DiagnoseAPIView(APIView):
                 best_result['medicines'] = gemini_info.get('antibiotics', [])
                 best_result['contagious'] = gemini_info.get('contagious', False)
                 
-                # Update all results with Gemini data for the best match
+                # Update all results with this data for the best match
                 results[0] = best_result
+                logger.info(f"✅ Updated best_result with {len(best_result.get('treatment', []))} treatment steps")
             else:
-                logger.warning(f"⚠️ Gemini API returned {data_source}, using dataset processor data")
+                logger.warning(f"⚠️ Gemini API returned error, using limited dataset processor data")
                 # Keep the original data from dataset processor
             
             # Save diagnosis to database with Gemini-enhanced data

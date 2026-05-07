@@ -37,12 +37,13 @@ def load_disease_info_fallback():
         return {}
 
 
-def get_disease_info_from_gemini(disease_name: str) -> Optional[Dict]:
+def get_disease_info_from_gemini(disease_name: str, symptoms: List[str] = None) -> Optional[Dict]:
     """
     Fetch disease information from Gemini API
     
     Args:
-        disease_name: Name of the disease (e.g., 'foot-and-mouth', 'lumpy', 'healthy', or any other disease)
+        disease_name: Name of the disease
+        symptoms: Optional list of observed symptoms to provide context
     
     Returns:
         Dictionary with disease information or None if API call fails
@@ -71,7 +72,11 @@ def get_disease_info_from_gemini(disease_name: str) -> Optional[Dict]:
             readable_name = 'Lumpy Skin Disease'
         
         # Create comprehensive prompt for Gemini with strict JSON formatting
-        prompt = f"""You are a veterinary expert. Provide detailed, accurate information about {readable_name} in livestock, specifically cattle/cows.
+        symptoms_context = ""
+        if symptoms:
+            symptoms_context = f" The observed symptoms are: {', '.join(symptoms)}."
+            
+        prompt = f"""You are a veterinary expert specializing in livestock health. Provide detailed, accurate information about {readable_name} in cattle/cows.{symptoms_context}
 
 CRITICAL: You MUST return ONLY valid JSON. No markdown, no code blocks, no explanations. Start with {{ and end with }}.
 
@@ -152,6 +157,9 @@ Return ONLY valid JSON starting with {{ and ending with }}. No other text."""
         successful_version = None
         successful_model = None
         last_error = None
+        
+        import logging
+        logger = logging.getLogger(__name__)
 
         for model in models_to_try:
             # Try v1beta API first, then v1 as fallback
@@ -175,8 +183,7 @@ Return ONLY valid JSON starting with {{ and ending with }}. No other text."""
                     if response.status_code == 200:
                         successful_model = model
                         successful_version = version
-                        print(f"✅ Successfully connected to Gemini API!")
-                        print(f"✅ Working Model: {model}, API Version: {version}")
+                        logger.info(f"✅ Successfully connected to Gemini API ({model}, {version})")
                         break
                     elif response.status_code == 404:
                         print(f"⚠️ Model '{model}' not found in {version} API")
@@ -236,8 +243,9 @@ Return ONLY valid JSON starting with {{ and ending with }}. No other text."""
                 break
 
         if not response or response.status_code != 200:
-            print(f"❌ Gemini API call failed")
-            print(f"❌ Tried models: {models_to_try}")
+            logger.error(f"❌ Gemini API call failed for '{disease_name}'")
+            logger.error(f"❌ Tried models: {models_to_try}")
+            logger.error(f"❌ Last error: {last_error}")
             return {
                 "_source": "gemini_error",
                 "gemini_error": last_error
@@ -248,7 +256,9 @@ Return ONLY valid JSON starting with {{ and ending with }}. No other text."""
         data = response.json()
         
         if not data.get('candidates') or not data['candidates'][0].get('content'):
-            print("⚠️ Gemini API returned empty response")
+            logger.warning(f"⚠️ Gemini API returned empty response or was blocked by safety filters")
+            if data.get('candidates') and data['candidates'][0].get('finishReason'):
+                logger.warning(f"⚠️ Finish Reason: {data['candidates'][0]['finishReason']}")
             return None
 
         # Extract text from response - handle different response structures
@@ -367,17 +377,18 @@ Return ONLY valid JSON starting with {{ and ending with }}. No other text."""
         }
 
 
-def get_disease_info(disease_name: str, use_cache: bool = False, force_fresh: bool = True) -> Dict:
+def get_disease_info(disease_name: str, symptoms: List[str] = None, use_cache: bool = False, force_fresh: bool = True) -> Dict:
     """
     Get disease information from Gemini API in REAL-TIME
     
     Args:
         disease_name: Name of the disease
-        use_cache: Whether to use cached responses (default: False for real-time data)
-        force_fresh: Force fresh API call even if cache exists (default: True)
+        symptoms: Optional list of symptoms for context
+        use_cache: Whether to use cached responses
+        force_fresh: Force fresh API call even if cache exists
     
     Returns:
-        Dictionary with disease information from Gemini API
+        Dictionary with disease information
     """
     # Normalize disease name
     disease_key = disease_name.lower().strip().replace(' ', '-').replace('_', '-')
@@ -391,10 +402,13 @@ def get_disease_info(disease_name: str, use_cache: bool = False, force_fresh: bo
     
     # ALWAYS try Gemini API first for real-time data
     print(f"🔄 Fetching REAL-TIME disease info from Gemini API for: {disease_name}")
-    gemini_info = get_disease_info_from_gemini(disease_key)
+    gemini_info = get_disease_info_from_gemini(disease_key, symptoms=symptoms)
     
     if gemini_info:
         if gemini_info.get("_source") == "gemini_error":
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"❌ get_disease_info returning gemini_error: {gemini_info.get('gemini_error')}")
             return gemini_info
         # Cache the result (but next call will still be fresh if force_fresh=True)
         if use_cache:
@@ -407,7 +421,7 @@ def get_disease_info(disease_name: str, use_cache: bool = False, force_fresh: bo
     print(f"⚠️ First Gemini API call failed, retrying once for: {disease_name}")
     import time
     time.sleep(1)  # Wait 1 second before retry
-    gemini_info_retry = get_disease_info_from_gemini(disease_key)
+    gemini_info_retry = get_disease_info_from_gemini(disease_key, symptoms=symptoms)
     
     if gemini_info_retry:
         if gemini_info_retry.get("_source") == "gemini_error":

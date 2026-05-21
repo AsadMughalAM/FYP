@@ -201,7 +201,7 @@ const DetectionHistory = ({ refreshTrigger }) => {
                               </span>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div>
                               <div className="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-sm">
                                 <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                                   <AlertCircle size={12} className="text-amber-500" />
@@ -215,6 +215,7 @@ const DetectionHistory = ({ refreshTrigger }) => {
                                   )) || <li className="text-xs text-slate-400 italic">No symptoms recorded</li>}
                                 </ul>
                               </div>
+                              <br />  
                               <div className="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-sm">
                                 <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                                   <CheckCircle2 size={12} className="text-emerald-500" />
@@ -224,16 +225,6 @@ const DetectionHistory = ({ refreshTrigger }) => {
                                   {item.treatment?.[0] || "No treatment protocol initiated for this case record."}
                                 </p>
                               </div>
-                            </div>
-
-                            <div className="flex gap-3">
-                              <button className="flex-1 flex items-center justify-center gap-2 py-3 bg-blue-600 text-white rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-[0.98]">
-                                <Download size={14} />
-                                Download PDF Report
-                              </button>
-                              <button className="px-4 py-3 bg-slate-100 text-slate-500 rounded-2xl hover:bg-red-50 hover:text-red-600 transition-all active:scale-95">
-                                <Trash2 size={16} />
-                              </button>
                             </div>
                           </div>
                         </div>

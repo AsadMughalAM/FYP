@@ -56,23 +56,31 @@ const SymptomDiagnosis = ({ onDiagnosisSuccess }) => {
       const response = await axios.post(`${API_BASE_URL}/diagnose/`, requestPayload, { headers: getAuthHeaders() });
       return response.data;
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
       if (data && data.results && data.results.length > 0) {
         let transformedDetection;
         if (data.saved_diagnosis) {
+          const topResult = data.results[0] || {};
+          const firstNonEmptyArray = (...values) => {
+            const found = values.find((value) => Array.isArray(value) && value.length > 0);
+            return found || [];
+          };
+
           transformedDetection = {
             id: data.saved_diagnosis.id,
-            disease_name: data.saved_diagnosis.disease_name || "Unknown Disease",
-            confidence_score: data.saved_diagnosis.confidence_score || 0,
-            severity: data.saved_diagnosis.severity || "Unknown",
-            symptoms: data.saved_diagnosis.matched_symptoms || [],
-            treatment: data.saved_diagnosis.treatment || [],
-            prevention: data.saved_diagnosis.prevention || [],
-            antibiotics: data.saved_diagnosis.medicines || [],
-            contagious: data.saved_diagnosis.contagious || false,
+            disease_name: data.saved_diagnosis.disease_name || topResult.disease_name || "Unknown Disease",
+            confidence_score: data.saved_diagnosis.confidence_score || topResult.confidence || 0,
+            severity: data.saved_diagnosis.severity || topResult.severity || "Unknown",
+            symptoms: firstNonEmptyArray(data.saved_diagnosis.matched_symptoms, topResult.matched_symptoms),
+            treatment: firstNonEmptyArray(data.saved_diagnosis.treatment, topResult.treatment),
+            prevention: firstNonEmptyArray(data.saved_diagnosis.prevention, topResult.prevention),
+            antibiotics: firstNonEmptyArray(data.saved_diagnosis.medicines, topResult.medicines, topResult.antibiotics),
+            contagious: data.saved_diagnosis.contagious || topResult.contagious || false,
             created_at: data.saved_diagnosis.created_at,
             status: data.saved_diagnosis.status || "diagnosed",
             animal_name: data.saved_diagnosis.animal_name || "Unknown",
+            gemini_source: data.gemini_source,
+            gemini_error: data.gemini_error,
           };
         }
         setDiagnosisResults(data);

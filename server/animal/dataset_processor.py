@@ -5,6 +5,16 @@ from pathlib import Path
 from django.conf import settings
 from collections import defaultdict
 import re
+import builtins
+
+
+def print(*args, **kwargs):
+    """Print safely on Windows consoles that cannot encode emoji/log symbols."""
+    safe_args = [
+        str(arg).encode('ascii', errors='replace').decode('ascii')
+        for arg in args
+    ]
+    return builtins.print(*safe_args, **kwargs)
 
 class DatasetProcessor:
     """Process and manage dataset files from server/Dataset/"""

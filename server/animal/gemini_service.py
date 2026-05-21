@@ -8,10 +8,35 @@ from django.conf import settings
 import requests
 from typing import Dict, Optional, List
 from datetime import datetime, timedelta
+import builtins
+
+
+def print(*args, **kwargs):
+    """Print safely on Windows consoles that cannot encode emoji/log symbols."""
+    safe_args = [
+        str(arg).encode('ascii', errors='replace').decode('ascii')
+        for arg in args
+    ]
+    return builtins.print(*safe_args, **kwargs)
 
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '').strip()
-GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-flash-latest')
+
+
+def _sanitize_error_text(value) -> str:
+    """Remove API keys from provider error strings before logging/returning."""
+    text = str(value or '')
+    if GEMINI_API_KEY:
+        text = text.replace(GEMINI_API_KEY, '[REDACTED]')
+    return text
+
+
+GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.5-flash')
 GEMINI_TIMEOUT_SECONDS = int(os.environ.get('GEMINI_TIMEOUT_SECONDS', '35'))
+DEFAULT_GEMINI_FALLBACK_MODELS = [
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-flash-latest',
+]
 
 # Try v1 API if v1beta doesn't work
 GEMINI_API_BASE_URL_V1BETA = 'https://generativelanguage.googleapis.com/v1beta'
@@ -87,7 +112,7 @@ def _build_gemini_request_body(prompt: str, compact: bool = False) -> Dict:
             "temperature": 0.1 if compact else 0.3,
             "topK": 20 if compact else 40,
             "topP": 0.8 if compact else 0.95,
-            "maxOutputTokens": 768 if compact else 1024,
+            "maxOutputTokens": 2048 if compact else 4096,
             "responseMimeType": "application/json",
         },
         "safetySettings": [
@@ -127,6 +152,66 @@ def load_disease_info_fallback():
             return json.load(f)
     except FileNotFoundError:
         return {}
+
+
+def _get_model_candidates() -> List[str]:
+    """Return unique Gemini model candidates, including safe defaults."""
+    fallback_models_raw = os.environ.get('GEMINI_FALLBACK_MODELS', '')
+    configured_fallbacks = [
+        m.strip() for m in fallback_models_raw.split(',') if m.strip()
+    ]
+    candidates = [*DEFAULT_GEMINI_FALLBACK_MODELS, GEMINI_MODEL, *configured_fallbacks]
+
+    unique_candidates = []
+    for model in candidates:
+        if model and model not in unique_candidates:
+            unique_candidates.append(model)
+    return unique_candidates
+
+
+def _find_fallback_disease_info(disease_key: str) -> Optional[Dict]:
+    """Find local disease info by exact or loose normalized key match."""
+    fallback_data = load_disease_info_fallback()
+    if not fallback_data:
+        return None
+
+    normalized_key = disease_key.lower().strip().replace(' ', '-').replace('_', '-')
+    if normalized_key in fallback_data:
+        return dict(fallback_data[normalized_key])
+
+    for key, info in fallback_data.items():
+        normalized_candidate = key.lower().strip().replace(' ', '-').replace('_', '-')
+        if normalized_key in normalized_candidate or normalized_candidate in normalized_key:
+            return dict(info)
+
+    return None
+
+
+def _fill_guidance_defaults(disease_info: Dict, readable_name: str, symptoms: List[str] = None) -> Dict:
+    """Guarantee UI-critical guidance fields are never empty."""
+    if not disease_info.get('name'):
+        disease_info['name'] = readable_name
+    if not disease_info.get('severity'):
+        disease_info['severity'] = 'Unknown'
+    if not disease_info.get('symptoms'):
+        disease_info['symptoms'] = symptoms or ["Clinical signs reported by user"]
+    if not disease_info.get('treatment'):
+        disease_info['treatment'] = [
+            "Isolate and monitor the affected animal",
+            "Provide fluids and supportive care",
+            "Consult a licensed veterinarian for treatment",
+        ]
+    if not disease_info.get('prevention'):
+        disease_info['prevention'] = [
+            "Keep housing clean and dry",
+            "Separate sick animals from healthy animals",
+            "Follow veterinary biosecurity guidance",
+        ]
+    if not disease_info.get('antibiotics'):
+        disease_info['antibiotics'] = []
+    if 'contagious' not in disease_info:
+        disease_info['contagious'] = False
+    return disease_info
 
 
 def get_disease_info_from_gemini(
@@ -170,12 +255,8 @@ def get_disease_info_from_gemini(
         prompt = _build_gemini_prompt(readable_name, symptoms=symptoms, compact=compact_mode)
         request_body = _build_gemini_request_body(prompt, compact=compact_mode)
 
-        # Try primary model first, then any optional fallback models from env.
-        fallback_models_raw = os.environ.get('GEMINI_FALLBACK_MODELS', '')
-        fallback_models = [
-            m.strip() for m in fallback_models_raw.split(',') if m.strip()
-        ]
-        models_to_try = [GEMINI_MODEL, *fallback_models]
+        # Try primary model first, then configured and built-in fallback models.
+        models_to_try = _get_model_candidates()
         
         print(f"🔍 Calling Gemini API for disease: {disease_name} -> {readable_name}")
         print(f"🔍 Prompt mode: {'compact' if compact_mode else 'standard'}")
@@ -224,13 +305,13 @@ def get_disease_info_from_gemini(
                         continue
                     elif response.status_code == 403:
                         print(f"❌ API Key invalid or permission denied (403)")
-                        print(f"❌ Error: {response.text[:300]}")
+                        print(f"❌ Error: {_sanitize_error_text(response.text)[:300]}")
                         return {
                             "_source": "gemini_error",
                             "gemini_error": {
                                 "type": "permission_denied",
                                 "status": 403,
-                                "message": (response.text or "")[:300],
+                                "message": _sanitize_error_text(response.text)[:300],
                             },
                         }
                     elif response.status_code == 429:
@@ -247,11 +328,11 @@ def get_disease_info_from_gemini(
                         continue
                     else:
                         print(f"⚠️ {version} API returned {response.status_code}")
-                        print(f"⚠️ Error: {response.text[:300]}")
+                        print(f"⚠️ Error: {_sanitize_error_text(response.text)[:300]}")
                         last_error = {
                             "type": "http_error",
                             "status": response.status_code,
-                            "message": (response.text or "")[:300],
+                            "message": _sanitize_error_text(response.text)[:300],
                         }
                         response = None
                         continue
@@ -262,8 +343,8 @@ def get_disease_info_from_gemini(
                     response = None
                     continue
                 except requests.exceptions.RequestException as e:
-                    print(f"⚠️ Request failed for {model} ({version}): {e}")
-                    last_error = {"type": "network", "message": str(e)}
+                    print(f"⚠️ Request failed for {model} ({version}): {_sanitize_error_text(e)}")
+                    last_error = {"type": "network", "message": _sanitize_error_text(e)}
                     response = None
                     continue
 
@@ -367,7 +448,7 @@ def get_disease_info_from_gemini(
 
             # Backfill missing structured fields from the local fallback dataset
             # when Gemini returns a partial/truncated JSON object.
-            fallback_info = load_disease_info_fallback().get(disease_key, {})
+            fallback_info = _find_fallback_disease_info(disease_key) or {}
             if fallback_info:
                 if not disease_info.get('name'):
                     disease_info['name'] = fallback_info.get('name', readable_name)
@@ -398,9 +479,11 @@ def get_disease_info_from_gemini(
                     compact_mode=True,
                 )
                 if compact_retry and compact_retry.get('_source') != 'gemini_error':
-                    return compact_retry
+                    if _has_complete_disease_payload(compact_retry):
+                        return compact_retry
             
             print(f"✅ Successfully fetched REAL-TIME disease info from Gemini for: {disease_name}")
+            disease_info = _fill_guidance_defaults(disease_info, readable_name, symptoms=symptoms)
             disease_info['_source'] = 'gemini_api'  # Mark as real-time Gemini data
             return disease_info
             
@@ -426,6 +509,7 @@ def get_disease_info_from_gemini(
                         disease_info['contagious'] = False
                     
                     print(f"✅ Successfully repaired and parsed JSON")
+                    disease_info = _fill_guidance_defaults(disease_info, readable_name, symptoms=symptoms)
                     disease_info['_source'] = 'gemini_api'
                     return disease_info
             except Exception as repair_error:
@@ -434,16 +518,16 @@ def get_disease_info_from_gemini(
             return None
 
     except requests.exceptions.RequestException as e:
-        print(f"⚠️ Network error calling Gemini API: {e}")
+        print(f"⚠️ Network error calling Gemini API: {_sanitize_error_text(e)}")
         return {
             "_source": "gemini_error",
-            "gemini_error": {"type": "network", "message": str(e)},
+            "gemini_error": {"type": "network", "message": _sanitize_error_text(e)},
         }
     except Exception as e:
-        print(f"⚠️ Error fetching disease info from Gemini: {e}")
+        print(f"⚠️ Error fetching disease info from Gemini: {_sanitize_error_text(e)}")
         return {
             "_source": "gemini_error",
-            "gemini_error": {"type": "unknown", "message": str(e)},
+            "gemini_error": {"type": "unknown", "message": _sanitize_error_text(e)},
         }
 
 
@@ -472,6 +556,7 @@ def get_disease_info(disease_name: str, symptoms: List[str] = None, use_cache: b
     
     # ALWAYS try Gemini API first for real-time data
     print(f"🔄 Fetching REAL-TIME disease info from Gemini API for: {disease_name}")
+    gemini_error = None
     gemini_info = get_disease_info_from_gemini(disease_key, symptoms=symptoms)
     
     if gemini_info:
@@ -523,5 +608,58 @@ def get_disease_info(disease_name: str, symptoms: List[str] = None, use_cache: b
         "prevention": ["Regular health checkups"],
         "antibiotics": [],
         "contagious": False,
+    }
+
+
+def get_disease_info(disease_name: str, symptoms: List[str] = None, use_cache: bool = False, force_fresh: bool = True) -> Dict:
+    """
+    Get disease information for diagnosis.
+
+    Gemini is always attempted first unless a fresh cache hit is explicitly allowed.
+    If Gemini fails, return local/default treatment and prevention instead of an
+    empty gemini_error payload so the UI can always render guidance.
+    """
+    disease_key = disease_name.lower().strip().replace(' ', '-').replace('_', '-')
+
+    if use_cache and not force_fresh and disease_key in _disease_info_cache:
+        cache_time = _cache_timestamps.get(disease_key)
+        if cache_time and datetime.now() - cache_time < CACHE_DURATION:
+            return _disease_info_cache[disease_key]
+
+    gemini_error = None
+
+    for attempt in range(2):
+        if attempt:
+            import time
+            time.sleep(1)
+
+        gemini_info = get_disease_info_from_gemini(disease_key, symptoms=symptoms)
+        if gemini_info and gemini_info.get('_source') != 'gemini_error':
+            if use_cache:
+                _disease_info_cache[disease_key] = gemini_info
+                _cache_timestamps[disease_key] = datetime.now()
+            return gemini_info
+
+        if gemini_info and gemini_info.get('_source') == 'gemini_error':
+            gemini_error = gemini_info.get('gemini_error')
+
+    fallback_info = _find_fallback_disease_info(disease_key)
+    if fallback_info:
+        fallback_info['_source'] = 'json_fallback'
+        fallback_info['_gemini_attempted'] = True
+        fallback_info['_gemini_error'] = gemini_error
+        return fallback_info
+
+    return {
+        "_source": "json_fallback",
+        "name": disease_key.replace('-', ' ').title(),
+        "severity": "Unknown",
+        "symptoms": symptoms or ["No symptoms recorded"],
+        "treatment": ["Consult a veterinarian"],
+        "prevention": ["Regular health checkups"],
+        "antibiotics": [],
+        "contagious": False,
+        "_gemini_attempted": True,
+        "_gemini_error": gemini_error,
     }
 

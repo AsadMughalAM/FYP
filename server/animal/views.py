@@ -949,7 +949,9 @@ class DiagnoseAPIView(APIView):
                 "input_symptoms": symptoms,
                 "diagnosis_id": saved_diagnosis_data.get('id') if saved_diagnosis_data else None,
                 "saved": saved_diagnosis_data is not None,
-                "gemini_enhanced": data_source == 'gemini_api'  # Indicate if Gemini data was used
+                "gemini_enhanced": data_source == 'gemini_api',  # Indicate if Gemini data was used
+                "gemini_source": data_source,
+                "gemini_error": gemini_info.get('_gemini_error'),
             }
             
             if saved_diagnosis_data:
@@ -1024,6 +1026,25 @@ class DiseaseDetailAPIView(APIView):
                     },
                     status=status.HTTP_404_NOT_FOUND
                 )
+
+            if not disease_details.get('treatment') or not disease_details.get('prevention'):
+                gemini_details = get_disease_info(
+                    disease_id,
+                    symptoms=disease_details.get('symptoms', []),
+                    use_cache=False,
+                    force_fresh=True,
+                )
+                if gemini_details.get('_source') != 'gemini_error':
+                    disease_details.update({
+                        'name': gemini_details.get('name', disease_details.get('name')),
+                        'severity': gemini_details.get('severity', disease_details.get('severity')),
+                        'symptoms': gemini_details.get('symptoms', disease_details.get('symptoms', [])),
+                        'treatment': gemini_details.get('treatment', []),
+                        'prevention': gemini_details.get('prevention', []),
+                        'medicines': gemini_details.get('antibiotics', []),
+                        'contagious': gemini_details.get('contagious', disease_details.get('contagious', False)),
+                        'gemini_source': gemini_details.get('_source'),
+                    })
             
             return Response({
                 "success": True,

@@ -13,6 +13,8 @@ import {
   ClipboardCheck,
   Zap
 } from "lucide-react";
+import axios from "axios";
+import API_BASE_URL, { getAuthHeaders } from "../../config/api";
 
 const DiseaseResults = ({ detection, refreshTrigger }) => {
   const [result, setResult] = useState(detection);
@@ -22,6 +24,41 @@ const DiseaseResults = ({ detection, refreshTrigger }) => {
       setResult(detection);
     }
   }, [detection, refreshTrigger]);
+
+  useEffect(() => {
+    const enrichMissingGuidance = async () => {
+      if (!result?.disease_name) return;
+
+      const hasTreatment = Array.isArray(result.treatment) && result.treatment.length > 0;
+      const hasPrevention = Array.isArray(result.prevention) && result.prevention.length > 0;
+      if (hasTreatment && hasPrevention) return;
+
+      const diseaseId = result.disease_id || result.disease_name.toLowerCase().trim().replace(/\s+/g, "-");
+      try {
+        const response = await axios.get(`${API_BASE_URL}/diseases/${encodeURIComponent(diseaseId)}/`, {
+          headers: getAuthHeaders(),
+        });
+        const details = response.data?.data;
+        if (!details) return;
+
+        setResult((current) => ({
+          ...current,
+          disease_name: details.name || current.disease_name,
+          severity: details.severity || current.severity,
+          symptoms: details.symptoms?.length ? details.symptoms : current.symptoms,
+          treatment: details.treatment?.length ? details.treatment : current.treatment,
+          prevention: details.prevention?.length ? details.prevention : current.prevention,
+          antibiotics: details.medicines?.length ? details.medicines : current.antibiotics,
+          contagious: details.contagious ?? current.contagious,
+          gemini_source: details.gemini_source || current.gemini_source,
+        }));
+      } catch (error) {
+        console.error("Failed to enrich disease guidance:", error);
+      }
+    };
+
+    enrichMissingGuidance();
+  }, [result]);
 
   if (!result) {
     return (
@@ -46,6 +83,15 @@ const DiseaseResults = ({ detection, refreshTrigger }) => {
   };
 
   const currentSeverity = severityStyles[result.severity] || severityStyles.Medium;
+  const topStoredResult = Array.isArray(result.all_results) ? result.all_results[0] : null;
+  const firstNonEmptyArray = (...values) => {
+    const found = values.find((value) => Array.isArray(value) && value.length > 0);
+    return found || [];
+  };
+  const symptoms = firstNonEmptyArray(result.symptoms, result.matched_symptoms, topStoredResult?.matched_symptoms);
+  const prevention = firstNonEmptyArray(result.prevention, topStoredResult?.prevention);
+  const treatment = firstNonEmptyArray(result.treatment, topStoredResult?.treatment);
+  const antibiotics = firstNonEmptyArray(result.antibiotics, result.medicines, topStoredResult?.medicines, topStoredResult?.antibiotics);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -111,12 +157,16 @@ const DiseaseResults = ({ detection, refreshTrigger }) => {
                 <h5 className="font-bold text-slate-900">Symptoms</h5>
               </div>
               <ul className="space-y-2.5">
-                {result.symptoms?.map((item, i) => (
-                  <li key={i} className="flex gap-2 text-sm text-slate-600">
-                    <span className="w-1.5 h-1.5 bg-amber-400 rounded-full shrink-0 mt-1.5"></span>
-                    {item}
-                  </li>
-                )) || <li className="text-xs text-slate-400 italic">No symptoms recorded</li>}
+                {symptoms.length > 0 ? (
+                  symptoms.map((item, i) => (
+                    <li key={i} className="flex gap-2 text-sm text-slate-600">
+                      <span className="w-1.5 h-1.5 bg-amber-400 rounded-full shrink-0 mt-1.5"></span>
+                      {item}
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-xs text-slate-400 italic">No symptoms recorded</li>
+                )}
               </ul>
             </div>
 
@@ -128,12 +178,16 @@ const DiseaseResults = ({ detection, refreshTrigger }) => {
                 <h5 className="font-bold text-slate-900">Prevention</h5>
               </div>
               <ul className="space-y-2.5">
-                {result.prevention?.map((item, i) => (
-                  <li key={i} className="flex gap-2 text-sm text-slate-600">
-                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full shrink-0 mt-1.5"></span>
-                    {item}
-                  </li>
-                )) || <li className="text-xs text-slate-400 italic">No prevention data</li>}
+                {prevention.length > 0 ? (
+                  prevention.map((item, i) => (
+                    <li key={i} className="flex gap-2 text-sm text-slate-600">
+                      <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full shrink-0 mt-1.5"></span>
+                      {item}
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-xs text-slate-400 italic">No prevention data</li>
+                )}
               </ul>
             </div>
           </div>
@@ -148,12 +202,16 @@ const DiseaseResults = ({ detection, refreshTrigger }) => {
                 <h5 className="text-lg font-bold">Treatment Protocol</h5>
               </div>
               <div className="space-y-4">
-                {result.treatment?.map((step, i) => (
-                  <div key={i} className="flex gap-4 p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-colors">
-                    <span className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0">{i + 1}</span>
-                    <p className="text-sm text-slate-300 leading-relaxed">{step}</p>
-                  </div>
-                )) || <p className="text-sm text-slate-500">Contact a specialist for treatment details.</p>}
+                {treatment.length > 0 ? (
+                  treatment.map((step, i) => (
+                    <div key={i} className="flex gap-4 p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-colors">
+                      <span className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0">{i + 1}</span>
+                      <p className="text-sm text-slate-300 leading-relaxed">{step}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-500">Contact a specialist for treatment details.</p>
+                )}
               </div>
             </div>
           </div>
@@ -183,14 +241,14 @@ const DiseaseResults = ({ detection, refreshTrigger }) => {
           </div>
 
           {/* Antibiotic Insights */}
-          {result.antibiotics?.length > 0 && (
+          {antibiotics.length > 0 && (
             <div className="bg-blue-600 text-white rounded-3xl p-6 shadow-lg shadow-blue-600/20">
               <h5 className="text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
                 <ClipboardCheck size={14} />
                 Recommended Agents
               </h5>
               <div className="flex flex-wrap gap-2">
-                {result.antibiotics.map((name, i) => (
+                {antibiotics.map((name, i) => (
                   <span key={i} className="px-3 py-1 bg-white/10 border border-white/20 rounded-full text-[10px] font-bold uppercase">
                     {name}
                   </span>

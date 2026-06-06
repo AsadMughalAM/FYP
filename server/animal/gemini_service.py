@@ -115,22 +115,26 @@ def _build_gemini_request_body(prompt: str, compact: bool = False) -> Dict:
             "maxOutputTokens": 2048 if compact else 4096,
             "responseMimeType": "application/json",
         },
+        # Veterinary disease info (antibiotics, fatal outcomes, etc.) can trip the
+        # default MEDIUM threshold and get the response blocked, which is the main
+        # reason real-time data sometimes fails to appear. Relax to BLOCK_ONLY_HIGH
+        # so legitimate medical content is not filtered out.
         "safetySettings": [
             {
                 "category": "HARM_CATEGORY_HARASSMENT",
-                "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+                "threshold": "BLOCK_ONLY_HIGH",
             },
             {
                 "category": "HARM_CATEGORY_HATE_SPEECH",
-                "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+                "threshold": "BLOCK_ONLY_HIGH",
             },
             {
                 "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+                "threshold": "BLOCK_ONLY_HIGH",
             },
             {
                 "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
-                "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+                "threshold": "BLOCK_ONLY_HIGH",
             },
         ],
     }
@@ -290,10 +294,39 @@ def get_disease_info_from_gemini(
                     )
 
                     if response.status_code == 200:
-                        successful_model = model
-                        successful_version = version
-                        logger.info(f"✅ Successfully connected to Gemini API ({model}, {version})")
-                        break
+                        # A 200 status is NOT enough: Gemini can return an empty or
+                        # safety-blocked candidate that carries no usable text. If we
+                        # accept it blindly, parsing fails and we never try the other
+                        # models. Only accept a 200 that actually contains text;
+                        # otherwise fall through and try the next model/version.
+                        try:
+                            _data = response.json()
+                            _cands = _data.get('candidates') or []
+                            _txt = None
+                            if _cands and _cands[0].get('content'):
+                                _parts = _cands[0]['content'].get('parts') or []
+                                if _parts and isinstance(_parts[0], dict):
+                                    _txt = _parts[0].get('text')
+                        except (ValueError, KeyError, IndexError, TypeError):
+                            _cands = []
+                            _txt = None
+
+                        if _txt and _txt.strip():
+                            successful_model = model
+                            successful_version = version
+                            logger.info(f"✅ Usable Gemini response from {model} ({version})")
+                            break
+
+                        finish_reason = _cands[0].get('finishReason') if _cands else None
+                        print(f"⚠️ 200 but empty/blocked from {model} ({version}); finishReason={finish_reason}")
+                        last_error = {
+                            "type": "empty_or_blocked",
+                            "status": 200,
+                            "message": f"Empty or safety-blocked response from {model} ({version}).",
+                            "finish_reason": finish_reason,
+                        }
+                        response = None
+                        continue
                     elif response.status_code == 404:
                         print(f"⚠️ Model '{model}' not found in {version} API")
                         last_error = {
@@ -628,10 +661,10 @@ def get_disease_info(disease_name: str, symptoms: List[str] = None, use_cache: b
 
     gemini_error = None
 
-    for attempt in range(2):
+    for attempt in range(3):
         if attempt:
             import time
-            time.sleep(1)
+            time.sleep(attempt)  # graduated backoff: 1s, then 2s
 
         gemini_info = get_disease_info_from_gemini(disease_key, symptoms=symptoms)
         if gemini_info and gemini_info.get('_source') != 'gemini_error':

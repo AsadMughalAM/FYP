@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VetAI Diagnostics — Workflow &amp; Presentation Guide</title>
+<style>
+  :root{
+    --blue:#2563eb; --blue-dark:#1e3a8a; --slate:#1e293b; --muted:#64748b;
+    --bg:#f8fafc; --line:#e2e8f0; --green:#059669; --amber:#d97706; --red:#dc2626; --purple:#7c3aed;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--slate);line-height:1.7;margin:0;background:var(--bg);font-size:15px;}
+  .page{max-width:1080px;margin:0 auto;background:#fff;}
+  .cover{background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 55%,#3b82f6 100%);color:#fff;padding:70px 60px;text-align:center;}
+  .cover .badge{display:inline-block;border:1px solid rgba(255,255,255,.35);padding:6px 16px;border-radius:999px;font-size:12px;letter-spacing:3px;text-transform:uppercase;margin-bottom:24px;}
+  .cover h1{font-size:44px;margin:0 0 10px;font-weight:800;}
+  .cover h2{font-size:18px;font-weight:400;opacity:.9;margin:0;}
+  .content{padding:46px 60px 80px;}
+  h2.section{font-size:25px;color:var(--blue-dark);border-bottom:3px solid var(--blue);padding-bottom:8px;margin-top:50px;margin-bottom:16px;font-weight:800;}
+  h3{font-size:19px;color:var(--slate);margin-top:30px;font-weight:700;}
+  h4{font-size:14px;color:var(--blue);margin-top:20px;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;}
+  code{background:#f1f5f9;color:#be123c;padding:2px 6px;border-radius:4px;font-family:Consolas,monospace;font-size:13px;}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;}
+  th{background:var(--blue-dark);color:#fff;text-align:left;padding:10px 12px;}
+  td{border:1px solid var(--line);padding:9px 12px;vertical-align:top;}
+  tr:nth-child(even) td{background:#f8fafc;}
+  .step{display:flex;gap:18px;margin:18px 0;align-items:flex-start;}
+  .step .num{flex-shrink:0;width:42px;height:42px;border-radius:50%;background:var(--blue);color:#fff;font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(37,99,235,.25);}
+  .step .body{flex:1;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 20px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  .step .body h4{margin-top:0;}
+  .behind{background:#eff6ff;border-left:4px solid var(--blue);padding:8px 14px;border-radius:0 8px 8px 0;font-size:13px;margin-top:10px;color:#1e3a8a;}
+  .note{border-left:4px solid var(--green);background:#ecfdf5;padding:12px 18px;border-radius:0 8px 8px 0;margin:16px 0;}
+  .warn{border-left:4px solid var(--amber);background:#fffbeb;padding:12px 18px;border-radius:0 8px 8px 0;margin:16px 0;}
+  .flow{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:18px 22px;font-family:Consolas,monospace;font-size:12.5px;white-space:pre;overflow-x:auto;line-height:1.5;}
+  .card{border:1px solid var(--line);border-radius:14px;padding:20px 24px;margin:16px 0;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  .feat{border:1px solid var(--line);border-left:5px solid var(--blue);border-radius:0 14px 14px 0;padding:18px 24px;margin:18px 0;background:#fff;}
+  .feat h3{margin-top:0;color:var(--blue-dark);}
+  .pill{display:inline-block;background:#dbeafe;color:#1e40af;font-size:11px;font-weight:700;padding:2px 9px;border-radius:6px;margin:2px;}
+  ul,ol{margin:8px 0;padding-left:24px;} li{margin:5px 0;}
+  .small{font-size:12.5px;color:var(--muted);}
+  .toc a{color:var(--blue);text-decoration:none;display:block;padding:4px 0;}
+  .toc{columns:2;}
+  footer{text-align:center;padding:30px;color:var(--muted);font-size:12px;border-top:1px solid var(--line);}
+  @media print{body{background:#fff;font-size:12px;}.page{max-width:100%;}.cover{padding:50px 40px;}.step,.feat,.card,table,.flow{page-break-inside:avoid;}h2.section{page-break-after:avoid;}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="cover">
+    <div class="badge">Presentation Guide · Roman Urdu + English</div>
+    <h1>🐄 VetAI Diagnostics</h1>
+    <h2>Poora Workflow · Authentication · Har Feature · Har Package — Asaan Zubaan Mein</h2>
+  </div>
+
+  <div class="content">
+
+  <h2 class="section">📑 Is Document Mein Kya Hai</h2>
+  <div class="toc">
+    <a href="#intro">1. Project Ek Nazar Mein</a>
+    <a href="#bigflow">2. Bara Workflow (Big Picture)</a>
+    <a href="#journey">3. User Ka Poora Safar (Step by Step)</a>
+    <a href="#auth">4. Authentication — Libraries &amp; Unka Kaam</a>
+    <a href="#features">5. Har Feature (Layman Explanation)</a>
+    <a href="#packages">6. Saare Packages — Kya, Kahan, Kyun</a>
+    <a href="#comm">7. Frontend ↔ Backend Baat-cheet Kaise</a>
+    <a href="#script">8. Presentation Bolne Ke Points</a>
+  </div>
+
+  <!-- ============ 1 INTRO ============ -->
+  <h2 class="section" id="intro">1. Project Ek Nazar Mein</h2>
+  <p><strong>VetAI Diagnostics</strong> ek website hai jo <strong>gaaye/maweshi (cattle) ki bimari pakarne</strong>
+  mein madad karti hai. Do tareeqon se:</p>
+  <ul>
+    <li><strong>Tasveer se (Image):</strong> User gaaye ki photo upload karta hai → ek <em>AI model (CNN)</em>
+    batata hai bimari kaun si hai (Foot-and-Mouth, Lumpy Skin, ya Healthy) aur kitni yaqeen (confidence) ke saath.</li>
+    <li><strong>Alamaat se (Symptoms):</strong> User bimari ki alamaat select karta hai → system top 5 mumkin
+    bimariyan rank karke dikhata hai.</li>
+  </ul>
+  <p>Phir dono soorton mein <strong>Google Gemini AI</strong> se <em>live</em> medical maloomaat
+  (ilaaj, bachaav, dawaiyan, severity) mangwa kar report banti hai. Ek <strong>Vet AI Chatbot</strong>
+  bhi hai jisse user animal health ke sawal pooch sakta hai.</p>
+
+  <div class="note"><strong>Aasaan misaal:</strong> Jaise insaan ke liye "symptom checker" app hota hai —
+  yeh wohi cheez hai magar <em>gaaye ke liye</em>, aur isme tasveer se bhi bimari pehchaani jaati hai.</div>
+
+  <h4>Technology — 3 hisse</h4>
+  <table>
+    <tr><th>Hissa</th><th>Kaam (asaan zubaan)</th><th>Main Tools</th></tr>
+    <tr><td><strong>Frontend</strong> (jo screen pe dikhta hai)</td><td>Buttons, forms, charts, rangeen UI — jo user dekhta aur use karta hai</td><td>React, Vite, Tailwind CSS</td></tr>
+    <tr><td><strong>Backend</strong> (chhupa hua dimagh)</td><td>Data sambhalna, login check, AI chalana, database</td><td>Django, Django REST Framework</td></tr>
+    <tr><td><strong>AI / Database</strong></td><td>Bimari pehchanna + maloomaat + records store</td><td>TensorFlow, Gemini API, MySQL</td></tr>
+  </table>
+
+  <!-- ============ 2 BIG FLOW ============ -->
+  <h2 class="section" id="bigflow">2. Bara Workflow (Big Picture)</h2>
+  <p>Sabse pehle poori tasveer dekh lein — phir har step detail mein.</p>
+  <div class="flow">┌──────────┐   ┌──────────┐   ┌─────────────────────────────────────┐
+│  SIGN UP │──▶│  SIGN IN │──▶│           DASHBOARD (Home)          │
+│ (account │   │ (token   │   │  Yahan se saare features khulte hain │
+│  banao)  │   │  milta)  │   └──────────────┬──────────────────────┘
+└──────────┘   └──────────┘                  │
+                                              ▼
+        ┌───────────────┬───────────────┬───────────────┬───────────────┐
+        ▼               ▼               ▼               ▼               ▼
+  📷 Image        🩺 Symptom       💬 Vet Chat     📊 Dashboard    📂 History
+   Diagnosis       Diagnosis        (Q&amp;A bot)      (charts/stats)   (puraane
+   (photo→AI)      (alamaat→rank)                                   records)
+        │               │
+        ▼               ▼
+   AI model        CSV scoring
+   prediction      engine
+        │               │
+        └──────┬────────┘
+               ▼
+        🌐 Gemini AI (live ilaaj/bachaav/dawai) → 📋 Report → 💾 Database</div>
+
+  <!-- ============ 3 JOURNEY ============ -->
+  <h2 class="section" id="journey">3. User Ka Poora Safar (Step by Step)</h2>
+
+  <div class="step">
+    <div class="num">1</div>
+    <div class="body">
+      <h4>Sign Up — Naya Account Banana</h4>
+      <p>User <code>username</code>, <code>email</code> aur <code>password</code> daal kar account banata hai.</p>
+      <div class="behind"><strong>Andar kya hota hai:</strong> Form <code>react-hook-form</code> se banta hai →
+      <code>axios</code> data ko backend ke <code>POST /api/register/</code> par bhejta hai →
+      Django ka <code>RegisterView</code> use ko <code>create_user()</code> se banata hai →
+      password <strong>hash</strong> (encrypt) ho kar MySQL database mein save hota hai (plain password kabhi store nahi hota).</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">2</div>
+    <div class="body">
+      <h4>Sign In — Login Karna</h4>
+      <p>User username + password daalta hai. Sahi hone par andar aa jaata hai.</p>
+      <div class="behind"><strong>Andar kya hota hai:</strong> <code>axios</code> → <code>POST /api/token/</code> →
+      <strong>SimpleJWT</strong> library username/password check karti hai → sahi hone par <strong>2 tokens</strong> deti hai:
+      <code>access</code> (24 ghante chalta hai) aur <code>refresh</code> (7 din). Yeh tokens browser ke
+      <code>localStorage</code> mein save ho jaate hain. Token ek "digital pass" hai jo sabit karta hai ke aap login ho.</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">3</div>
+    <div class="body">
+      <h4>Protected Page — Bina Login Andar Nahi</h4>
+      <p>Agar koi bina login ke main page kholne ki koshish kare to use seedha login page par bhej diya jaata hai.</p>
+      <div class="behind"><strong>Andar kya hota hai:</strong> <code>ProtectedRoute</code> (react-router-dom) check karta hai
+      ke <code>localStorage</code> mein token hai ya nahi. Token na ho → <code>Navigate</code> se <code>/signin</code> par redirect.</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">4</div>
+    <div class="body">
+      <h4>Dashboard — Sab Features Ka Ghar</h4>
+      <p>Login ke baad user ko ek tabbed dashboard dikhta hai: Dashboard, Image Diagnosis, Symptom Diagnosis,
+      Results, History, Vet Chat. Sidebar se feature switch hota hai.</p>
+      <div class="behind"><strong>Andar kya hota hai:</strong> <code>Home.jsx</code> tabs ko sambhalta hai
+      (<code>useState</code>). Dashboard khulte hi <code>axios</code> se <code>/statistics/</code> aur <code>/history/</code>
+      ek saath mangwaye jaate hain aur <code>recharts</code> se charts ban jaate hain.</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">5</div>
+    <div class="body">
+      <h4>Koi Feature Use Karna (jaise Image Diagnosis)</h4>
+      <p>User photo upload karta hai → "Analyze" dabata hai → kuch second mein report aa jaati hai.</p>
+      <div class="behind"><strong>Andar kya hota hai:</strong> Har request ke saath <code>axios</code>
+      <code>Authorization: Bearer &lt;token&gt;</code> header bhejta hai → backend
+      <strong>JWTAuthentication</strong> token check karta hai → pata chalta hai yeh kaun sa user hai →
+      AI chalti hai → Gemini se maloomaat → report wapas → screen pe dikh jaati hai.</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">6</div>
+    <div class="body">
+      <h4>Logout / Token Expire</h4>
+      <p>User logout kare to token mit jaata hai. Ya token purana (expire) ho jaye to system khud login page par bhej deta hai.</p>
+      <div class="behind"><strong>Andar kya hota hai:</strong> Logout par <code>localStorage</code> se token remove.
+      Agar backend <code>401 Unauthorized</code> de (token invalid/expired) to frontend token clear karke
+      <code>/signin</code> par redirect kar deta hai.</div>
+    </div>
+  </div>
+
+  <!-- ============ 4 AUTH ============ -->
+  <h2 class="section" id="auth">4. Authentication — Konsi Libraries, Kya Kaam</h2>
+  <p>Authentication ka matlab: "yeh sabit karna ke user kaun hai aur usay andar aane ki ijaazat hai ya nahi."
+  Is project mein <strong>JWT (JSON Web Token)</strong> tareeqa use hua hai. Niche har library aur uska kaam asaan zubaan mein:</p>
+
+  <table>
+    <tr><th>Library / Tool</th><th>Kaam (asaan zubaan)</th><th>Kahan Use Hua</th></tr>
+    <tr><td><strong>djangorestframework-simplejwt</strong> (backend)</td>
+      <td>Login par <em>token (digital pass)</em> banata hai aur har request par check karta hai ke pass asli hai ya nahi. Access token 24 ghante, refresh token 7 din.</td>
+      <td><code>settings.py</code> (SIMPLE_JWT config), <code>server/urls.py</code> (<code>/api/token/</code>, <code>/api/token/refresh/</code>)</td></tr>
+    <tr><td><strong>Django built-in auth</strong> (backend)</td>
+      <td>User model, password ko <em>hash</em> (mehfooz) karna, <code>create_user()</code>. Plain password kabhi save nahi hota.</td>
+      <td><code>accounts/serializers.py</code> (<code>create_user</code>), <code>accounts/views.py</code> (RegisterView)</td></tr>
+    <tr><td><strong>Django REST Framework — JWTAuthentication</strong></td>
+      <td>Har protected API request par token parh kar user pehchanta hai (<code>request.user</code>). Token galat ho to <code>401</code> deta hai.</td>
+      <td><code>settings.py</code> (DEFAULT_AUTHENTICATION_CLASSES), har view mein <code>permission_classes=[IsAuthenticated]</code></td></tr>
+    <tr><td><strong>react-router-dom</strong> (frontend)</td>
+      <td>Pages ke darmiyan navigation + <em>ProtectedRoute</em> (bina login page block karna).</td>
+      <td><code>App.jsx</code> (routes), <code>ProtectedRoute.jsx</code> (token guard), <code>SignIn.jsx</code> (redirect)</td></tr>
+    <tr><td><strong>axios</strong> (frontend)</td>
+      <td>Backend ko request bhejta hai aur har baar <code>Authorization: Bearer &lt;token&gt;</code> header lagata hai.</td>
+      <td>Har component jahan API call hai (SignIn, SignUp, Dashboard, ImageDiagnosis, ...)</td></tr>
+    <tr><td><strong>browser localStorage</strong></td>
+      <td>Token ko browser mein mehfooz rakhta hai taa-ke page refresh ke baad bhi user login raha rahe.</td>
+      <td><code>SignIn.jsx</code> (save token), <code>config/api.js</code> (read token), <code>LogOut</code> (remove)</td></tr>
+    <tr><td><strong>jwt-decode</strong> (frontend)</td>
+      <td>Token ke andar ki maloomaat (jaise expiry, username) parhne ke liye — bina server ke. Project mein available hai token handle karne ke liye.</td>
+      <td>Frontend dependency (<code>package.json</code>)</td></tr>
+    <tr><td><strong>react-hook-form</strong> (frontend)</td>
+      <td>Login/Signup forms banana + validation (jaise "password 8 character ka ho").</td>
+      <td><code>SignIn.jsx</code>, <code>SignUp.jsx</code></td></tr>
+    <tr><td><strong>django-cors-headers</strong> (backend)</td>
+      <td>Frontend (alag domain) ko backend se baat karne ki ijaazat deta hai — warna browser block kar deta.</td>
+      <td><code>settings.py</code> (MIDDLEWARE + CORS_ALLOWED_ORIGINS)</td></tr>
+  </table>
+
+  <h4>Authentication Ka Flow — Ek Tasveer Mein</h4>
+  <div class="flow">SIGN UP:  Form ─axios POST /api/register/─▶ Django create_user() ─▶ password HASH ─▶ MySQL
+
+SIGN IN:  Form ─axios POST /api/token/─▶ SimpleJWT (check user+pass) ─▶ { access, refresh }
+                                                                          │
+                                                       browser localStorage mein save
+
+HAR REQUEST:  axios ── Authorization: Bearer &lt;access&gt; ──▶ JWTAuthentication ─▶ "yeh user X hai"
+                                                                          │
+                                          token galat/purana ─▶ 401 ─▶ frontend logout + /signin</div>
+
+  <div class="warn"><strong>Aasaan tashreeh (token kyun?):</strong> Har baar password bhejne ke bajaye,
+  login par ek "pass" (token) mil jaata hai. Aage har kaam mein wohi pass dikhaya jaata hai. Yeh tez bhi hai
+  aur mehfooz bhi — password baar baar network par nahi jaata.</div>
+
+  <!-- ============ 5 FEATURES ============ -->
+  <h2 class="section" id="features">5. Har Feature — Layman Explanation</h2>
+
+  <div class="feat">
+    <h3>📷 Feature 1 — Image Diagnosis (Tasveer se bimari)</h3>
+    <p><strong>User kya karta hai:</strong> Gaaye ki photo upload karta hai aur "Analyze" dabata hai.</p>
+    <p><strong>Hota kya hai (asaan):</strong> Ek trained <em>AI model</em> photo dekh kar batata hai bimari
+    kaun si hai aur kitni confidence (% mein). Phir Gemini AI se uska ilaaj/bachaav mangwa kar report banti hai.</p>
+    <p><strong>Behind the scenes:</strong> Photo → backend <code>/api/animal/detect/</code> → <strong>TensorFlow</strong>
+    ka <strong>MobileNetV2 CNN</strong> model prediction karta hai → <strong>Gemini API</strong> se live maloomaat →
+    record MySQL mein save → report screen par.</p>
+    <p><span class="pill">react-hook-form</span><span class="pill">axios</span><span class="pill">react-query</span>
+    <span class="pill">TensorFlow / Keras</span><span class="pill">Pillow + numpy</span><span class="pill">Gemini API</span></p>
+  </div>
+
+  <div class="feat">
+    <h3>🩺 Feature 2 — Symptom Diagnosis (Alamaat se bimari)</h3>
+    <p><strong>User kya karta hai:</strong> Ek list mein se alamaat (jaise bukhar, langra-pan, bhook na lagna) select karta hai.</p>
+    <p><strong>Hota kya hai (asaan):</strong> System har bimari se in alamaat ka milaan karta hai aur top 5 sab se
+    mumkin bimariyan, score ke saath, dikhata hai. Best match ke liye Gemini se ilaaj bhi aata hai.</p>
+    <p><strong>Behind the scenes:</strong> Alamaat → <code>/api/diagnose/</code> → <strong>pandas</strong> ek
+    CSV dataset (~2000 records, ~93 alamaat) parh kar scoring karta hai
+    (<code>confidence = 0.6×match + 0.4×coverage</code>) → best match Gemini se enrich → save.</p>
+    <p><span class="pill">react-hook-form</span><span class="pill">react-query (useQuery)</span><span class="pill">axios</span>
+    <span class="pill">pandas</span><span class="pill">Gemini API</span></p>
+  </div>
+
+  <div class="feat">
+    <h3>📋 Feature 3 — Diagnosis Results (Report)</h3>
+    <p><strong>User kya karta hai:</strong> Diagnosis ke baad ek saaf-suthri "medical report" dekhta hai.</p>
+    <p><strong>Hota kya hai (asaan):</strong> Severity (kitni khatarnak), symptoms, ilaaj ke steps, bachaav,
+    recommended dawaiyan, aur agar bimari <em>chhoot wali (contagious)</em> ho to laal warning.</p>
+    <p><strong>Behind the scenes:</strong> Agar kisi field ka data missing ho to component khud
+    <code>/api/diseases/&lt;id&gt;/</code> se baqi maloomaat mangwa leta hai.</p>
+    <p><span class="pill">lucide-react (icons)</span><span class="pill">axios</span><span class="pill">Tailwind CSS</span></p>
+  </div>
+
+  <div class="feat">
+    <h3>💬 Feature 4 — Vet AI Chat (Sawal-jawab bot)</h3>
+    <p><strong>User kya karta hai:</strong> Animal health ke baare mein chat mein sawal poochta hai
+    (jaise "bimari ki aam alamaat kya hain?").</p>
+    <p><strong>Hota kya hai (asaan):</strong> Ek AI assistant veterinary andaaz mein jawab deta hai. Purani baat-cheet
+    browser mein yaad rehti hai.</p>
+    <p><strong>Behind the scenes:</strong> Message → <code>/api/animal/vetchat/</code> → backend ek
+    "veterinary system prompt" ke saath <strong>Gemini API</strong> ko bhejta hai (API key chhupi rehti hai server par).
+    Chat history <code>localStorage</code> mein save.</p>
+    <p><span class="pill">axios</span><span class="pill">requests (backend)</span><span class="pill">Gemini API</span><span class="pill">localStorage</span></p>
+  </div>
+
+  <div class="feat">
+    <h3>📊 Feature 5 — Dashboard (Charts &amp; Stats)</h3>
+    <p><strong>User kya karta hai:</strong> Apne saare scans ka khulasa graphs mein dekhta hai.</p>
+    <p><strong>Hota kya hai (asaan):</strong> Total scans, average confidence, kaun si bimari kitni baar aayi
+    (pie chart), severity breakdown, aur recent activity.</p>
+    <p><strong>Behind the scenes:</strong> <code>/statistics/</code> + <code>/history/</code> se data →
+    <strong>recharts</strong> se charts ban jaate hain.</p>
+    <p><span class="pill">recharts (charts)</span><span class="pill">axios</span><span class="pill">lucide-react</span></p>
+  </div>
+
+  <div class="feat">
+    <h3>📂 Feature 6 — Detection / Medical History</h3>
+    <p><strong>User kya karta hai:</strong> Apne puraane diagnoses ki list dekhta hai aur kisi bhi record ki detail khol sakta hai.</p>
+    <p><strong>Hota kya hai (asaan):</strong> Sab records date ke hisaab se (naya pehle) dikhte hain. Sirf usi user ke records
+    (har user ka data alag/mehfooz).</p>
+    <p><strong>Behind the scenes:</strong> <code>/api/animal/history/</code> sirf <code>request.user</code> ke records laata hai.</p>
+    <p><span class="pill">axios</span><span class="pill">Django ORM</span><span class="pill">MySQL</span></p>
+  </div>
+
+  <!-- ============ 6 PACKAGES ============ -->
+  <h2 class="section" id="packages">6. Saare Packages — Kya, Kahan, Kyun</h2>
+
+  <h3>🎨 Frontend Packages (client/package.json)</h3>
+  <table>
+    <tr><th>Package</th><th>Kaam (asaan zubaan)</th><th>Kahan Use Hua</th></tr>
+    <tr><td><strong>react</strong> / react-dom</td><td>Poora UI banane ka base — screen pe jo kuch dikhta hai sab React se hai.</td><td>Har component / poora app</td></tr>
+    <tr><td><strong>vite</strong></td><td>Development server (fauran reload) + final build banane ka tool. Tez aur halka.</td><td>Project build/run (<code>npm run dev</code>)</td></tr>
+    <tr><td><strong>react-router-dom</strong></td><td>Ek page se doosre page jaana (routing) + ProtectedRoute.</td><td><code>App.jsx</code>, <code>ProtectedRoute.jsx</code>, <code>SignIn.jsx</code></td></tr>
+    <tr><td><strong>axios</strong></td><td>Backend ko HTTP request bhejna (GET/POST) aur jawab lena.</td><td>SignIn, SignUp, Dashboard, ImageDiagnosis, SymptomDiagnosis, VetChat, DiseaseResults</td></tr>
+    <tr><td><strong>@tanstack/react-query</strong></td><td>Server se data laana/bhejna asaan banata hai — loading, error, success khud handle. (<code>useQuery</code>, <code>useMutation</code>)</td><td>SignIn/SignUp (mutation), ImageDiagnosis (mutation), SymptomDiagnosis (query+mutation), <code>main.jsx</code> (provider)</td></tr>
+    <tr><td><strong>react-hook-form</strong></td><td>Forms banana + validation (required, min length) — kam code mein.</td><td>SignIn, SignUp, ImageDiagnosis, SymptomDiagnosis</td></tr>
+    <tr><td><strong>jwt-decode</strong></td><td>JWT token ke andar ki info (expiry/username) parhna.</td><td>Auth token handling (dependency)</td></tr>
+    <tr><td><strong>tailwindcss</strong> + @tailwindcss/vite</td><td>CSS styling — rang, spacing, layout sab <code>className</code> se. Tez aur consistent design.</td><td>Har component ka design</td></tr>
+    <tr><td><strong>lucide-react</strong></td><td>Saaf-suthre icons (upload, search, bell, stethoscope, etc.).</td><td>Header, sidebar, har feature ke icons</td></tr>
+    <tr><td><strong>recharts</strong></td><td>Charts banana — Bar, Pie, Area graphs.</td><td><code>Dashboard.jsx</code></td></tr>
+    <tr><td><strong>clsx</strong> / tailwind-merge / class-variance-authority</td><td>Conditional styling — halaat ke mutabiq className jodna/saaf karna (jaise active tab highlight).</td><td>UI styling helpers</td></tr>
+    <tr><td><strong>tw-animate-css</strong></td><td>Animations (fade-in, slide) — UI ko smooth/professional dikhana.</td><td>Transitions / entrance effects</td></tr>
+  </table>
+
+  <h3>⚙️ Backend Packages (server/requirements.txt)</h3>
+  <table>
+    <tr><th>Package</th><th>Kaam (asaan zubaan)</th><th>Kahan Use Hua</th></tr>
+    <tr><td><strong>Django</strong></td><td>Poora backend framework — URLs, models, database (ORM), settings.</td><td>Poora <code>server/</code> project</td></tr>
+    <tr><td><strong>djangorestframework</strong> (DRF)</td><td>REST API banane ka tool — <code>APIView</code>, <code>Response</code>, serializers (JSON mein data).</td><td><code>animal/views.py</code>, <code>accounts/views.py</code>, serializers</td></tr>
+    <tr><td><strong>djangorestframework-simplejwt</strong></td><td>JWT login tokens banana + verify karna.</td><td><code>settings.py</code>, <code>/api/token/</code> endpoints</td></tr>
+    <tr><td><strong>django-cors-headers</strong></td><td>Frontend (Vercel/localhost) ko backend se baat karne ki ijaazat (CORS).</td><td><code>settings.py</code> middleware</td></tr>
+    <tr><td><strong>python-dotenv</strong> / django-environ</td><td><code>.env</code> file se secret settings (DB password, Gemini key) parhna — code mein hardcode nahi.</td><td><code>settings.py</code> (<code>load_dotenv</code>)</td></tr>
+    <tr><td><strong>mysqlclient</strong></td><td>MySQL database se connect karne ka driver.</td><td><code>settings.py</code> DATABASES</td></tr>
+    <tr><td><strong>tensorflow</strong> (+ keras)</td><td>Deep learning — AI model ko train karna aur photo se bimari predict karna.</td><td><code>ml_model/disease_detector.py</code>, <code>animal/views.py</code></td></tr>
+    <tr><td><strong>Pillow</strong></td><td>Tasveer khol-na/process karna (ImageField + model input).</td><td>ImageField, <code>keras load_img</code></td></tr>
+    <tr><td><strong>opencv-python</strong></td><td>Image processing helper.</td><td>Image pipeline</td></tr>
+    <tr><td><strong>numpy</strong></td><td>Number arrays — tasveer ko numbers mein badalna, predictions handle karna.</td><td>Prediction code</td></tr>
+    <tr><td><strong>pandas</strong></td><td>CSV dataset parhna aur symptom scoring (table data).</td><td><code>dataset_processor.py</code></td></tr>
+    <tr><td><strong>scikit-learn</strong></td><td>ML metrics — accuracy report, confusion matrix, class weights.</td><td><code>disease_detector.py</code> (training)</td></tr>
+    <tr><td><strong>requests</strong></td><td>Gemini API ko HTTP call karna (backend se).</td><td><code>gemini_service.py</code>, VetChat view</td></tr>
+    <tr><td><strong>gunicorn</strong></td><td>Production web server (live deployment par Django chalata hai).</td><td><code>Procfile</code> (Railway)</td></tr>
+    <tr><td><strong>whitenoise</strong></td><td>Production mein static files (CSS/JS) serve karna.</td><td><code>settings.py</code> middleware</td></tr>
+    <tr><td><strong>Google Gemini API</strong></td><td>Live medical maloomaat (ilaaj/bachaav/dawai) + chatbot ke jawab.</td><td><code>gemini_service.py</code>, <code>VetChatAPIView</code></td></tr>
+  </table>
+
+  <!-- ============ 7 COMM ============ -->
+  <h2 class="section" id="comm">7. Frontend ↔ Backend Baat-cheet Kaise Hoti Hai</h2>
+  <p>Frontend aur Backend do alag programs hain. Beech mein <strong>API (HTTP requests)</strong> se baat hoti hai —
+  jaise restaurant mein waiter (axios) customer (frontend) ka order kitchen (backend) tak le jaata hai aur khana (data) wapas laata hai.</p>
+  <div class="flow">FRONTEND (React)                          BACKEND (Django)
+─────────────────                         ─────────────────
+axios.post("/api/animal/detect/", photo)  ──▶  view: image lo, AI chalao
+   + header: Bearer &lt;token&gt;                    Gemini se info lo, DB mein save
+                                                       │
+   report screen pe dikhao   ◀────── JSON { disease, confidence, treatment... }</div>
+  <ul>
+    <li><strong>Request:</strong> frontend axios se data + token bhejta hai.</li>
+    <li><strong>Auth check:</strong> backend token verify karta hai (user kaun).</li>
+    <li><strong>Kaam:</strong> backend AI/database/Gemini chalata hai.</li>
+    <li><strong>Response:</strong> backend JSON mein jawab deta hai → frontend usay screen par dikhata hai.</li>
+  </ul>
+
+  <!-- ============ 8 SCRIPT ============ -->
+  <h2 class="section" id="script">8. Presentation Bolne Ke Points (Quick Script)</h2>
+  <div class="card">
+    <ol>
+      <li><strong>Intro:</strong> "Yeh VetAI Diagnostics hai — gaaye/maweshi ki bimari AI se pakarne wali web app.
+      Do tareeqe: tasveer se aur alamaat se."</li>
+      <li><strong>Tech:</strong> "Frontend React + Tailwind, Backend Django REST Framework, AI ke liye TensorFlow
+      ka MobileNetV2 model aur Google Gemini, data MySQL mein."</li>
+      <li><strong>Auth:</strong> "Login JWT tokens se hota hai — SimpleJWT library token banati hai, frontend
+      localStorage mein rakhta hai, har request ke saath bhejta hai. Bina login ProtectedRoute andar nahi aane deta."</li>
+      <li><strong>Image flow:</strong> "Photo upload → CNN model prediction → Gemini se live ilaaj → report."</li>
+      <li><strong>Symptom flow:</strong> "Alamaat select → CSV dataset par scoring → top 5 bimariyan → Gemini enrich."</li>
+      <li><strong>Chat:</strong> "Gemini-powered veterinary chatbot, API key server par mehfooz."</li>
+      <li><strong>Dashboard:</strong> "Recharts se charts — total scans, confidence, disease distribution, severity."</li>
+      <li><strong>Closing:</strong> "Har feature ke peeche specific packages hain — React Query data ke liye,
+      axios requests ke liye, react-hook-form forms ke liye, TensorFlow/Gemini AI ke liye."</li>
+    </ol>
+  </div>
+
+  <div class="note"><strong>Word/PDF banane ke liye:</strong> Yeh file browser mein kholein →
+  <em>Ctrl+P</em> → "Save as PDF". <code>.docx</code> ke liye MS Word mein File → Open se yeh HTML kholein
+  aur "Save As → Word Document" karein. Tables aur design preserve rahenge.</div>
+
+  </div>
+
+  <footer>
+    VetAI Diagnostics — Workflow &amp; Presentation Guide · Asaan zubaan mein bana hua, source code se<br>
+    Frontend: React + Vite + Tailwind · Backend: Django + DRF · AI: TensorFlow + Gemini · DB: MySQL
+  </footer>
+
+</div>
+</body>
+</html>

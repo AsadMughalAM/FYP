@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VetAI Diagnostics — Final Year Project Documentation</title>
+<style>
+  :root{
+    --blue:#2563eb; --blue-dark:#1e3a8a; --slate:#1e293b; --muted:#64748b;
+    --bg:#f8fafc; --line:#e2e8f0; --green:#059669; --amber:#d97706; --red:#dc2626; --purple:#7c3aed;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--slate); line-height:1.65; margin:0; background:var(--bg); font-size:15px;
+  }
+  .page{max-width:1080px; margin:0 auto; background:#fff; padding:0 0 80px;}
+  /* Cover */
+  .cover{
+    background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 55%,#3b82f6 100%);
+    color:#fff; padding:80px 60px; text-align:center;
+  }
+  .cover .badge{display:inline-block;border:1px solid rgba(255,255,255,.35);padding:6px 16px;border-radius:999px;font-size:12px;letter-spacing:3px;text-transform:uppercase;margin-bottom:28px;}
+  .cover h1{font-size:48px;margin:0 0 10px;font-weight:800;letter-spacing:-1px;}
+  .cover h2{font-size:20px;font-weight:400;opacity:.9;margin:0 0 30px;}
+  .cover .meta{font-size:13px;opacity:.85;letter-spacing:1px;}
+  .cover .pills{margin-top:34px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+  .cover .pills span{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;}
+  /* Content */
+  .content{padding:50px 60px;}
+  h2.section{
+    font-size:26px;color:var(--blue-dark);border-bottom:3px solid var(--blue);
+    padding-bottom:8px;margin-top:54px;margin-bottom:18px;font-weight:800;
+  }
+  h3{font-size:19px;color:var(--slate);margin-top:32px;font-weight:700;}
+  h4{font-size:15px;color:var(--blue);margin-top:22px;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;}
+  p{margin:10px 0;}
+  code{background:#f1f5f9;color:#be123c;padding:2px 6px;border-radius:4px;font-family:Consolas,Monaco,monospace;font-size:13px;}
+  pre{background:#0f172a;color:#e2e8f0;padding:18px 20px;border-radius:10px;overflow-x:auto;font-family:Consolas,Monaco,monospace;font-size:13px;line-height:1.55;}
+  pre .c{color:#94a3b8;} pre .k{color:#7dd3fc;} pre .s{color:#86efac;}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;}
+  th{background:var(--blue-dark);color:#fff;text-align:left;padding:10px 12px;font-weight:600;}
+  td{border:1px solid var(--line);padding:9px 12px;vertical-align:top;}
+  tr:nth-child(even) td{background:#f8fafc;}
+  .tag{display:inline-block;padding:2px 9px;border-radius:6px;font-size:11px;font-weight:700;}
+  .tag.get{background:#dbeafe;color:#1e40af;} .tag.post{background:#dcfce7;color:#166534;}
+  .tag.patch{background:#fef3c7;color:#92400e;}
+  .card{border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin:16px 0;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .note{border-left:4px solid var(--blue);background:#eff6ff;padding:12px 18px;border-radius:0 8px 8px 0;margin:16px 0;}
+  .warn{border-left:4px solid var(--amber);background:#fffbeb;padding:12px 18px;border-radius:0 8px 8px 0;margin:16px 0;}
+  .danger{border-left:4px solid var(--red);background:#fef2f2;padding:12px 18px;border-radius:0 8px 8px 0;margin:16px 0;}
+  ul,ol{margin:10px 0;padding-left:24px;} li{margin:5px 0;}
+  .toc{columns:2;column-gap:40px;}
+  .toc a{color:var(--blue);text-decoration:none;display:block;padding:4px 0;font-size:14px;}
+  .toc a:hover{text-decoration:underline;}
+  .kpi{display:flex;gap:16px;flex-wrap:wrap;margin:20px 0;}
+  .kpi .box{flex:1;min-width:160px;background:linear-gradient(135deg,#f0f9ff,#fff);border:1px solid var(--line);border-radius:12px;padding:18px;}
+  .kpi .box .n{font-size:30px;font-weight:800;color:var(--blue);}
+  .kpi .box .l{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .flow{background:#f8fafc;border:1px dashed var(--blue);border-radius:10px;padding:18px 22px;font-family:Consolas,monospace;font-size:13px;white-space:pre;overflow-x:auto;color:#334155;}
+  .small{font-size:12.5px;color:var(--muted);}
+  footer{text-align:center;padding:30px;color:var(--muted);font-size:12px;border-top:1px solid var(--line);margin-top:40px;}
+  @media print{
+    body{background:#fff;font-size:12px;}
+    .page{max-width:100%;}
+    .cover{padding:60px 40px;}
+    h2.section{page-break-after:avoid;}
+    pre,table,.card{page-break-inside:avoid;}
+    .toc{columns:2;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ===================== COVER ===================== -->
+  <div class="cover">
+    <div class="badge">Final Year Project · Technical Documentation</div>
+    <h1>🐄 VetAI Diagnostics</h1>
+    <h2>AI-Powered Animal (Cattle) Disease Detection &amp; Diagnosis System</h2>
+    <div class="meta">Full-Stack Web Application · Deep Learning · Generative AI</div>
+    <div class="pills">
+      <span>React 19 + Vite</span>
+      <span>Django 5 + DRF</span>
+      <span>TensorFlow / MobileNetV2</span>
+      <span>Google Gemini API</span>
+      <span>MySQL</span>
+      <span>JWT Auth</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+  <!-- ===================== TOC ===================== -->
+  <h2 class="section" id="toc">📑 Table of Contents</h2>
+  <div class="toc">
+    <a href="#exec">1. Executive Summary</a>
+    <a href="#what">2. What the Project Does</a>
+    <a href="#stack">3. Technology Stack</a>
+    <a href="#arch">4. System Architecture</a>
+    <a href="#structure">5. Repository Structure</a>
+    <a href="#backend">6. Backend Deep Dive (Django)</a>
+    <a href="#ml">7. Machine Learning Pipeline</a>
+    <a href="#gemini">8. Gemini AI Integration</a>
+    <a href="#symptom">9. Symptom-Based Diagnosis Engine</a>
+    <a href="#db">10. Database Schema</a>
+    <a href="#api">11. Complete API Reference</a>
+    <a href="#auth">12. Authentication &amp; Security</a>
+    <a href="#frontend">13. Frontend Deep Dive (React)</a>
+    <a href="#flows">14. Key User Flows</a>
+    <a href="#deploy">15. Setup &amp; Deployment</a>
+    <a href="#observations">16. Code Observations &amp; Notes</a>
+    <a href="#roadmap">17. Future Roadmap</a>
+  </div>
+
+  <!-- ===================== 1 EXEC ===================== -->
+  <h2 class="section" id="exec">1. Executive Summary</h2>
+  <p><strong>VetAI Diagnostics</strong> is a full-stack web platform that helps livestock owners and
+  veterinarians diagnose cattle diseases through two complementary AI-driven paths:</p>
+  <ol>
+    <li><strong>Image-based diagnosis</strong> — a user uploads a photo of a cow; a deep-learning
+    CNN (MobileNetV2 transfer learning) classifies it into one of three trained classes
+    (<em>Foot-and-Mouth</em>, <em>Lumpy Skin Disease</em>, <em>Healthy</em>).</li>
+    <li><strong>Symptom-based diagnosis</strong> — a user selects observed symptoms from a list of
+    ~93 clinical markers; a rule-based scoring engine (built from a CSV dataset of ~2,000 records)
+    ranks the most likely diseases.</li>
+  </ol>
+  <p>For <em>both</em> paths, the system then calls the <strong>Google Gemini API in real time</strong> to
+  generate rich, up-to-date medical guidance — symptoms, severity, treatment steps, prevention,
+  recommended antibiotics, and contagion status — with a local JSON file acting as a fallback when
+  the API is unavailable. A third feature, <strong>Vet AI Chat</strong>, provides a conversational
+  veterinary assistant backed by Gemini through a secure server-side proxy.</p>
+
+  <div class="kpi">
+    <div class="box"><div class="n">3</div><div class="l">Image disease classes</div></div>
+    <div class="box"><div class="n">~93</div><div class="l">Symptom markers</div></div>
+    <div class="box"><div class="n">~2,000</div><div class="l">Dataset records</div></div>
+    <div class="box"><div class="n">11</div><div class="l">REST API endpoints</div></div>
+    <div class="box"><div class="n">3</div><div class="l">AI subsystems (CNN + Gemini + rules)</div></div>
+  </div>
+
+  <div class="note"><strong>Positioning:</strong> The app explicitly markets itself as a
+  decision-support / diagnostic-suggestion tool. Every report carries a disclaimer that results must
+  be verified by a licensed veterinarian — it does not replace professional diagnosis.</div>
+
+  <!-- ===================== 2 WHAT ===================== -->
+  <h2 class="section" id="what">2. What the Project Does</h2>
+  <div class="grid">
+    <div class="card">
+      <h4>🖼️ Image Diagnosis</h4>
+      <p>Upload a cow image → CNN predicts disease + confidence → Gemini enriches with medical detail →
+      stored as a detection record → shown in a clinical report UI.</p>
+    </div>
+    <div class="card">
+      <h4>🩺 Symptom Diagnosis</h4>
+      <p>Pick symptoms → dataset scoring engine ranks top-5 diseases → Gemini enriches the best match →
+      saved &amp; displayed with treatment/prevention/medicines.</p>
+    </div>
+    <div class="card">
+      <h4>💬 Vet AI Chat</h4>
+      <p>Conversational assistant. Frontend sends message + history to a Django proxy, which calls
+      Gemini with a veterinary system prompt. Chat history persists in the browser's localStorage.</p>
+    </div>
+    <div class="card">
+      <h4>📊 Dashboard &amp; History</h4>
+      <p>Per-user statistics (total scans, average confidence, disease distribution, severity
+      stratification) rendered with Recharts, plus a full medical-history list of past detections.</p>
+    </div>
+  </div>
+
+  <!-- ===================== 3 STACK ===================== -->
+  <h2 class="section" id="stack">3. Technology Stack</h2>
+  <table>
+    <tr><th>Layer</th><th>Technology</th><th>Version</th><th>Role</th></tr>
+    <tr><td rowspan="6"><strong>Backend</strong></td><td>Django</td><td>5.2.4</td><td>Web framework / ORM</td></tr>
+    <tr><td>Django REST Framework</td><td>3.16.0</td><td>REST API layer</td></tr>
+    <tr><td>SimpleJWT</td><td>5.3.1</td><td>JWT authentication</td></tr>
+    <tr><td>django-cors-headers</td><td>4.7.0</td><td>CORS handling</td></tr>
+    <tr><td>mysqlclient</td><td>2.2.7</td><td>MySQL driver</td></tr>
+    <tr><td>gunicorn + whitenoise</td><td>23.0 / 6.8</td><td>Production server + static files</td></tr>
+    <tr><td rowspan="5"><strong>ML / AI</strong></td><td>TensorFlow / Keras</td><td>2.13.0</td><td>CNN training &amp; inference</td></tr>
+    <tr><td>MobileNetV2</td><td>ImageNet weights</td><td>Transfer-learning backbone</td></tr>
+    <tr><td>scikit-learn</td><td>1.7.1</td><td>Metrics, class weights</td></tr>
+    <tr><td>pandas / numpy</td><td>2.2 / &lt;2</td><td>Dataset processing</td></tr>
+    <tr><td>Google Gemini API</td><td>gemini-2.5-flash</td><td>Real-time medical info + chat</td></tr>
+    <tr><td rowspan="6"><strong>Frontend</strong></td><td>React</td><td>19.1.1</td><td>UI framework</td></tr>
+    <tr><td>Vite</td><td>7.1.7</td><td>Build tool / dev server</td></tr>
+    <tr><td>Tailwind CSS</td><td>4.1.16</td><td>Styling</td></tr>
+    <tr><td>@tanstack/react-query</td><td>5.90.5</td><td>Server-state / mutations</td></tr>
+    <tr><td>axios</td><td>1.13.1</td><td>HTTP client</td></tr>
+    <tr><td>react-router-dom / recharts / lucide-react</td><td>7 / 3.5 / —</td><td>Routing / charts / icons</td></tr>
+    <tr><td><strong>Database</strong></td><td>MySQL</td><td>8.x</td><td>Persistent storage</td></tr>
+    <tr><td><strong>Hosting</strong></td><td>Railway (API) + Vercel (UI)</td><td>—</td><td>Deployment targets</td></tr>
+  </table>
+
+  <!-- ===================== 4 ARCH ===================== -->
+  <h2 class="section" id="arch">4. System Architecture</h2>
+  <p>A classic decoupled SPA + REST architecture. The React client talks to the Django REST API over
+  JWT-authenticated HTTP. Django orchestrates three "intelligence" sources: the local TensorFlow
+  model, the pandas-driven symptom engine, and the external Gemini API.</p>
+
+  <div class="flow">┌─────────────────────────────────────────────────────────────────────┐
+│                         CLIENT (React + Vite)                         │
+│   SignIn/SignUp ─ ProtectedRoute ─ Home (tabbed dashboard)            │
+│   Dashboard │ ImageDiagnosis │ SymptomDiagnosis │ Results │ History │ │
+│   VetChat                                                             │
+└───────────────┬───────────────────────────────────────────────────────┘
+                │  axios + JWT (Bearer access_token in localStorage)
+                ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                     DJANGO REST FRAMEWORK API                         │
+│  accounts/  → register, JWT token issue/refresh                       │
+│  animal/    → detect, diagnose, history, statistics, vetchat, ...     │
+├───────────────┬─────────────────┬────────────────┬───────────────────┤
+│  TensorFlow   │  DatasetProcessor│  Gemini Service │  MySQL (ORM)      │
+│  MobileNetV2  │  (CSV scoring)   │  (REST → Google) │  Detection records│
+│  .h5 model    │  Training.csv    │  + JSON fallback │                   │
+└───────────────┴─────────────────┴────────────────┴───────────────────┘
+                                          │
+                                          ▼
+                          Google Generative Language API
+                          (gemini-2.5-flash, v1beta/v1)</div>
+
+  <!-- ===================== 5 STRUCTURE ===================== -->
+  <h2 class="section" id="structure">5. Repository Structure</h2>
+  <pre><span class="c"># Two top-level apps: client/ (React) and server/ (Django)</span>
+FinalFYP/
+├── client/                          <span class="c"># React 19 + Vite SPA</span>
+│   ├── src/
+│   │   ├── App.jsx                   <span class="c"># Router: /signin /signup / (protected)</span>
+│   │   ├── main.jsx                  <span class="c"># Entry; mounts React + QueryClient</span>
+│   │   ├── auth/SignIn, SignUp/      <span class="c"># Login & registration forms</span>
+│   │   ├── components/
+│   │   │   ├── Dashboard/            <span class="c"># Stats + charts (Recharts)</span>
+│   │   │   ├── ImageDiagnosis/       <span class="c"># Image upload + CNN trigger</span>
+│   │   │   ├── SymptomDiagnosis/     <span class="c"># Symptom picker + diagnosis</span>
+│   │   │   ├── DiseaseResults/       <span class="c"># Clinical report view</span>
+│   │   │   ├── DetectionHistory/     <span class="c"># Past records list</span>
+│   │   │   ├── VetChat/              <span class="c"># Gemini chat UI</span>
+│   │   │   ├── ProtectedRoute/       <span class="c"># Token guard</span>
+│   │   │   └── LogOut/
+│   │   ├── config/api.js             <span class="c"># API base URL + auth headers</span>
+│   │   └── pages/Home.jsx            <span class="c"># Tabbed shell</span>
+│   ├── vite.config.js · vercel.json
+│
+├── server/                          <span class="c"># Django 5 project</span>
+│   ├── server/                      <span class="c"># settings, urls, wsgi/asgi</span>
+│   ├── accounts/                    <span class="c"># User registration app</span>
+│   ├── animal/                      <span class="c"># Core: detection, diagnosis, chat</span>
+│   │   ├── views.py                 <span class="c"># All API views (~1250 lines)</span>
+│   │   ├── models.py                <span class="c"># AnimalDetection, SymptomDiagnosis</span>
+│   │   ├── gemini_service.py        <span class="c"># Gemini REST client + fallback</span>
+│   │   ├── gemini_json_fix.py       <span class="c"># Robust JSON repair</span>
+│   │   └── dataset_processor.py     <span class="c"># CSV symptom-scoring engine</span>
+│   ├── ml_model/                    <span class="c"># Training + inference assets</span>
+│   │   ├── disease_detector.py      <span class="c"># CNN build/train/save/load</span>
+│   │   ├── disease_info.json        <span class="c"># Local disease DB (fallback)</span>
+│   │   ├── management/commands/train_model.py
+│   │   └── trained_models/          <span class="c"># .h5, classes.pkl, SavedModel</span>
+│   ├── Dataset/                     <span class="c"># Training.csv / Testing.csv</span>
+│   ├── media/uploads/               <span class="c"># Uploaded images</span>
+│   ├── requirements.txt · Procfile · runtime.txt
+└── README.md</pre>
+
+  <!-- ===================== 6 BACKEND ===================== -->
+  <h2 class="section" id="backend">6. Backend Deep Dive (Django)</h2>
+
+  <h3>6.1 Project configuration (<code>server/settings.py</code>)</h3>
+  <ul>
+    <li><strong>Apps:</strong> <code>accounts</code>, <code>animal</code>, <code>ml_model</code> + DRF, SimpleJWT, corsheaders.</li>
+    <li><strong>Database:</strong> MySQL, configured via environment variables (<code>DB_NAME</code>, <code>DB_HOST</code>, etc.) with <code>utf8mb4</code> charset.</li>
+    <li><strong>Auth:</strong> Default authentication class is <code>JWTAuthentication</code>. Access token lives 24h, refresh token 7 days, with rotation enabled.</li>
+    <li><strong>CORS/CSRF:</strong> Whitelists the Vercel frontend + localhost; allows all origins when <code>DEBUG=True</code>.</li>
+    <li><strong>Static:</strong> WhiteNoise serves compressed static files (production-friendly).</li>
+    <li><strong>Media:</strong> Uploaded images saved under <code>media/uploads/</code>.</li>
+    <li><strong>Logging:</strong> Console logging; the <code>animal</code> logger runs at <code>DEBUG</code> level (heavy diagnostic logging throughout the views).</li>
+  </ul>
+
+  <h3>6.2 The <code>animal</code> app — view classes</h3>
+  <p>All views are DRF <code>APIView</code> classes protected by <code>IsAuthenticated</code> (except registration / token endpoints which live in <code>accounts</code> and <code>server.urls</code>).</p>
+  <table>
+    <tr><th>View class</th><th>Responsibility</th></tr>
+    <tr><td><code>DetectAnimalAPIView</code></td><td>Image upload → CNN prediction → Gemini enrichment → save <code>AnimalDetection</code>.</td></tr>
+    <tr><td><code>DetectionHistoryAPIView</code></td><td>List the current user's image detections.</td></tr>
+    <tr><td><code>DetectionDetailAPIView</code></td><td>Retrieve / PATCH a single detection (status, notes).</td></tr>
+    <tr><td><code>StatisticsAPIView</code></td><td>Aggregate per-user stats (distribution, avg confidence).</td></tr>
+    <tr><td><code>SymptomsAPIView</code></td><td>Return all available symptom labels from the dataset.</td></tr>
+    <tr><td><code>DiagnoseAPIView</code></td><td>Symptom list → scoring engine → Gemini enrichment → save <code>SymptomDiagnosis</code>.</td></tr>
+    <tr><td><code>DiseaseDetailAPIView</code></td><td>Detailed info for one disease (dataset + Gemini top-up).</td></tr>
+    <tr><td><code>SymptomDiagnosisHistory / DetailAPIView</code></td><td>List / retrieve symptom diagnoses.</td></tr>
+    <tr><td><code>VetChatAPIView</code></td><td>Secure server-side Gemini chat proxy with veterinary system prompt.</td></tr>
+  </table>
+
+  <h3>6.3 Image-detection request lifecycle (<code>DetectAnimalAPIView.post</code>)</h3>
+  <ol>
+    <li>Read <code>request.FILES['image']</code>; validate it exists, is &le; 10 MB, and has an allowed extension (<code>.jpg/.jpeg/.png/.gif</code>).</li>
+    <li>Write the upload to a cross-platform <code>NamedTemporaryFile</code>.</li>
+    <li>Run prediction through the singleton <code>DiseaseDetectionModel</code> (loads the <code>.h5</code> lazily, caches it).</li>
+    <li>Normalize the predicted label and validate it is one of <code>foot-and-mouth / lumpy / healthy</code>.</li>
+    <li>Call <code>get_disease_info(..., use_cache=False, force_fresh=True)</code> to fetch <strong>real-time</strong> Gemini medical data.</li>
+    <li>If Gemini fails → fall back to <code>disease_info.json</code> → else a hardcoded "consult a vet" default.</li>
+    <li>Persist an <code>AnimalDetection</code> row with all fields, clean up the temp file, and return the serialized record plus a <code>data_source</code> marker and any low-confidence warning.</li>
+  </ol>
+
+  <!-- ===================== 7 ML ===================== -->
+  <h2 class="section" id="ml">7. Machine Learning Pipeline</h2>
+
+  <h3>7.1 Model architecture (<code>ml_model/disease_detector.py</code>)</h3>
+  <p>Transfer learning on a frozen MobileNetV2 backbone with a custom classification head:</p>
+  <pre><span class="k">Sequential</span>([
+  Input(shape=(224, 224, 3)),
+  Rescaling(1./255),                  <span class="c"># normalization done INSIDE the model</span>
+  MobileNetV2(include_top=False, weights=<span class="s">'imagenet'</span>, trainable=False),
+  GlobalAveragePooling2D(),
+  Dense(256, activation=<span class="s">'relu'</span>), Dropout(0.5),
+  Dense(128, activation=<span class="s">'relu'</span>), Dropout(0.3),
+  Dense(num_classes, activation=<span class="s">'softmax'</span>),
+])
+<span class="c"># optimizer=Adam(1e-3), loss=categorical_crossentropy</span></pre>
+
+  <div class="note"><strong>Key design choice:</strong> rescaling (<code>÷255</code>) is a layer <em>inside</em> the
+  model, so the <code>ImageDataGenerator</code> uses <code>rescale=None</code> and the inference code does
+  <em>not</em> divide by 255. This keeps training and prediction preprocessing identical — a common source
+  of bugs that the author deliberately avoided.</div>
+
+  <h3>7.2 Training</h3>
+  <ul>
+    <li><strong>Data:</strong> images organized in one folder per disease class.</li>
+    <li><strong>Augmentation:</strong> rotation, shifts, horizontal flip, zoom, shear (no rescale).</li>
+    <li><strong>Class imbalance:</strong> handled via <code>compute_class_weight('balanced', ...)</code>.</li>
+    <li><strong>Callbacks:</strong> <code>EarlyStopping</code> (patience 10), <code>ReduceLROnPlateau</code>, <code>ModelCheckpoint</code> (best val accuracy).</li>
+    <li><strong>Evaluation:</strong> prints validation loss/accuracy, a classification report, and a confusion matrix.</li>
+    <li><strong>Run via:</strong> <code>python manage.py train_model --epochs 50 --batch-size 32</code>.</li>
+  </ul>
+
+  <h3>7.3 Saved artifacts &amp; trained classes</h3>
+  <p>Three formats are saved for portability: <code>cow_disease_detector.h5</code>, a
+  <code>_savedmodel</code> directory (TF SavedModel), and the class index map as both <code>.pkl</code> and
+  <code>.json</code>. The currently trained classes are:</p>
+  <pre>{ "0": "foot-and-mouth", "1": "healthy", "2": "lumpy" }</pre>
+
+  <h3>7.4 Robust model loading (inference)</h3>
+  <p>The inference wrapper (<code>animal/views.py → DiseaseDetectionModel</code>) is a singleton and contains
+  an unusually defensive loader to survive <strong>TensorFlow/Keras version mismatches</strong> between the
+  machine that trained the model and the server running it. It layers several fallbacks:</p>
+  <ol>
+    <li>Patch <code>Operation.from_config</code> for signature changes across TF versions.</li>
+    <li>Custom <code>FixedBatchNormalization</code> (handles <code>axis</code> as list vs int) and
+    <code>FixedInputLayer</code> (maps legacy <code>batch_shape</code> → <code>input_shape</code>).</li>
+    <li>Try <code>load_model(safe_mode=False, custom_objects=...)</code>.</li>
+    <li>Fallback: read the raw H5 JSON config with <code>h5py</code>, normalize legacy keys
+    (<code>batch_shape</code>, <code>DTypePolicy</code>), rebuild via <code>model_from_json</code>, then <code>load_weights</code>.</li>
+    <li>Further fallbacks via <code>tf.compat.v1</code> and a clear "please retrain" error message.</li>
+  </ol>
+  <div class="warn">This complexity exists because the model was trained with one TF version and may be
+  loaded under another (e.g. on Railway). It is robust but brittle — the cleanest long-term fix is to
+  retrain and serve under a single, pinned TensorFlow version.</div>
+
+  <h3>7.5 Prediction post-processing</h3>
+  <p>The image is loaded at 224×224, predicted, and the softmax outputs are mapped to the class names.
+  Only the three valid disease keys are surfaced. Confidence thresholds (<code>&lt;0.5</code>, <code>&lt;0.4</code>)
+  trigger log warnings and a user-facing "low confidence — verify with a vet" message in the response.</p>
+
+  <!-- ===================== 8 GEMINI ===================== -->
+  <h2 class="section" id="gemini">8. Gemini AI Integration</h2>
+  <p>The file <code>animal/gemini_service.py</code> is the heart of the "real-time medical knowledge"
+  feature. It calls Google's Generative Language API and returns structured JSON describing a disease.</p>
+
+  <h4>Configuration (env-driven)</h4>
+  <table>
+    <tr><th>Variable</th><th>Default</th><th>Purpose</th></tr>
+    <tr><td><code>GEMINI_API_KEY</code></td><td>(empty)</td><td>API key; if unset → graceful error</td></tr>
+    <tr><td><code>GEMINI_MODEL</code></td><td><code>gemini-2.5-flash</code></td><td>Primary model</td></tr>
+    <tr><td><code>GEMINI_FALLBACK_MODELS</code></td><td><code>2.5-flash, 2.0-flash, flash-latest</code></td><td>Tried in order</td></tr>
+    <tr><td><code>GEMINI_TIMEOUT_SECONDS</code></td><td>35</td><td>Per-request timeout</td></tr>
+  </table>
+
+  <h4>How it works</h4>
+  <ol>
+    <li><strong>Prompt engineering:</strong> builds a strict prompt demanding <em>only</em> valid JSON with a
+    fixed schema (<code>name, severity, symptoms[], treatment[], prevention[], contagious, antibiotics[]</code>).
+    Uses <code>responseMimeType: application/json</code> and safety settings.</li>
+    <li><strong>Multi-model / multi-version retry:</strong> iterates over candidate models and both the
+    <code>v1beta</code> and <code>v1</code> API base URLs, handling 404 / 403 / 429 / timeouts distinctly.</li>
+    <li><strong>Robust JSON parsing:</strong> strips markdown fences, then uses
+    <code>gemini_json_fix.safe_parse_gemini_response</code> / <code>repair_json</code> to recover from truncated
+    or malformed JSON. If the response is incomplete (<code>MAX_TOKENS</code>), it retries with a "compact" prompt.</li>
+    <li><strong>Defaults &amp; backfill:</strong> missing fields are filled from the local
+    <code>disease_info.json</code> or sensible "consult a vet" defaults so the UI is never empty.</li>
+    <li><strong>Source tagging:</strong> every result carries an internal <code>_source</code>
+    (<code>gemini_api</code>, <code>json_fallback</code>, <code>gemini_error</code>, ...) used by the views to
+    decide warnings.</li>
+  </ol>
+  <p>Errors are <strong>sanitized</strong> (the API key is redacted from any error text via
+  <code>_sanitize_error_text</code>) and a custom <code>print()</code> wrapper strips non-ASCII so emoji logs
+  don't crash Windows consoles.</p>
+
+  <div class="warn"><strong>Note:</strong> <code>gemini_service.py</code> defines <code>get_disease_info</code>
+  <em>twice</em> — the second definition (line ~614) shadows the first. Both behave similarly (Gemini-first,
+  then fallback), but only the second is actually used. Worth consolidating into one function.</div>
+
+  <h4>Vet Chat proxy (<code>VetChatAPIView</code>)</h4>
+  <p>Keeps the API key server-side. It builds a veterinary "system prompt", appends the last 10 messages
+  of conversation history, and forwards to Gemini with <code>temperature 0.7</code>. The reply text is
+  returned to the React chat widget. History is stored client-side in <code>localStorage</code>.</p>
+
+  <!-- ===================== 9 SYMPTOM ===================== -->
+  <h2 class="section" id="symptom">9. Symptom-Based Diagnosis Engine</h2>
+  <p>Implemented in <code>animal/dataset_processor.py</code> as a singleton that loads CSV data once.</p>
+  <ul>
+    <li><strong>Dataset:</strong> <code>server/Dataset/Training.csv</code> (~2,043 rows) and
+    <code>Testing.csv</code>. Each row is a one-hot vector of ~93 symptom columns plus a
+    <code>prognosis</code> (disease) label.</li>
+    <li><strong>Loading:</strong> reads all CSVs, builds a disease→symptom frequency map and a
+    symptom→disease reverse index, and a sorted, human-formatted list of symptoms for the UI.</li>
+    <li><strong>Scoring (<code>diagnose</code>):</strong> for each disease it counts matched symptoms (using
+    substring matching after normalization) and computes a blended confidence:
+    <code>confidence = 0.6 × match_ratio + 0.4 × symptom_coverage</code>. Returns the top-N (default 5).</li>
+    <li><strong>Enrichment:</strong> the best match is then passed to Gemini (with the user's symptoms as
+    context) so treatment / prevention / medicines reflect live data; results are saved as a
+    <code>SymptomDiagnosis</code> row.</li>
+  </ul>
+  <div class="note">This engine is heuristic (keyword overlap), not a trained classifier — fast, transparent,
+  and dataset-driven, but sensitive to symptom naming. It complements rather than competes with the CNN.</div>
+
+  <!-- ===================== 10 DB ===================== -->
+  <h2 class="section" id="db">10. Database Schema</h2>
+  <p>Two core models in <code>animal/models.py</code>, both linked to Django's built-in <code>User</code>.</p>
+
+  <h4>AnimalDetection (image-based)</h4>
+  <table>
+    <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+    <tr><td>user</td><td>FK → User</td><td>nullable; owner of the record</td></tr>
+    <tr><td>image</td><td>ImageField</td><td>stored under <code>uploads/</code></td></tr>
+    <tr><td>animal_name / disease_name</td><td>CharField</td><td>e.g. "Cow" / "Lumpy Skin Disease"</td></tr>
+    <tr><td>confidence_score</td><td>Float</td><td>0–1 from softmax</td></tr>
+    <tr><td>severity</td><td>Char (choices)</td><td>None / Low / Medium / High / Critical</td></tr>
+    <tr><td>symptoms / treatment / prevention / antibiotics</td><td>JSONField (list)</td><td>from Gemini/fallback</td></tr>
+    <tr><td>contagious</td><td>Boolean</td><td>contagion flag</td></tr>
+    <tr><td>all_predictions</td><td>JSONField (dict)</td><td>per-class confidences</td></tr>
+    <tr><td>notes / status</td><td>Text / Char</td><td>diagnosed / treated / recovered / pending</td></tr>
+    <tr><td>created_at / updated_at</td><td>DateTime</td><td>auto timestamps</td></tr>
+  </table>
+  <p class="small">Indexes on <code>(user, -created_at)</code> and <code>disease_name</code>; default ordering newest-first.</p>
+
+  <h4>SymptomDiagnosis (symptom-based)</h4>
+  <p>Similar shape plus diagnosis-specific fields: <code>animal_age</code>, <code>input_symptoms</code>,
+  <code>disease_id</code>, <code>match_rate</code>, <code>matched_symptoms</code>, <code>medicines</code>, and
+  <code>all_results</code> (the full top-5 list stored for reference).</p>
+
+  <!-- ===================== 11 API ===================== -->
+  <h2 class="section" id="api">11. Complete API Reference</h2>
+  <p>Base path: <code>/api/</code>. All endpoints below require a <code>Authorization: Bearer &lt;token&gt;</code>
+  header unless noted.</p>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr>
+    <tr><td><span class="tag get">GET</span></td><td>/health/</td><td>No</td><td>Service healthcheck</td></tr>
+    <tr><td><span class="tag post">POST</span></td><td>/api/register/</td><td>No</td><td>Create a user account</td></tr>
+    <tr><td><span class="tag post">POST</span></td><td>/api/token/</td><td>No</td><td>Obtain JWT access + refresh tokens</td></tr>
+    <tr><td><span class="tag post">POST</span></td><td>/api/token/refresh/</td><td>No</td><td>Refresh access token</td></tr>
+    <tr><td><span class="tag post">POST</span></td><td>/api/animal/detect/</td><td>Yes</td><td>Upload image → disease detection</td></tr>
+    <tr><td><span class="tag get">GET</span></td><td>/api/animal/history/</td><td>Yes</td><td>List image detections</td></tr>
+    <tr><td><span class="tag get">GET</span> <span class="tag patch">PATCH</span></td><td>/api/animal/detail/&lt;id&gt;/</td><td>Yes</td><td>Get / update a detection</td></tr>
+    <tr><td><span class="tag get">GET</span></td><td>/api/animal/statistics/</td><td>Yes</td><td>Per-user analytics</td></tr>
+    <tr><td><span class="tag get">GET</span></td><td>/api/symptoms/ &amp; /api/animal/symptoms/</td><td>Yes</td><td>List symptom labels</td></tr>
+    <tr><td><span class="tag post">POST</span></td><td>/api/diagnose/ &amp; /api/animal/diagnose/</td><td>Yes</td><td>Symptom-based diagnosis</td></tr>
+    <tr><td><span class="tag get">GET</span></td><td>/api/diseases/&lt;disease_id&gt;/</td><td>Yes</td><td>Detailed disease info</td></tr>
+    <tr><td><span class="tag get">GET</span></td><td>/api/animal/symptom-diagnosis/history/</td><td>Yes</td><td>Symptom diagnosis history</td></tr>
+    <tr><td><span class="tag post">POST</span></td><td>/api/animal/vetchat/</td><td>Yes</td><td>Vet AI chat (Gemini proxy)</td></tr>
+  </table>
+
+  <h4>Example: detection response</h4>
+  <pre>{
+  <span class="s">"success"</span>: true,
+  <span class="s">"message"</span>: <span class="s">"Disease detected successfully"</span>,
+  <span class="s">"data"</span>: {
+    <span class="s">"id"</span>: 12, <span class="s">"disease_name"</span>: <span class="s">"Lumpy Skin Disease"</span>,
+    <span class="s">"confidence_score"</span>: 0.94, <span class="s">"severity"</span>: <span class="s">"High"</span>,
+    <span class="s">"symptoms"</span>: [...], <span class="s">"treatment"</span>: [...], <span class="s">"prevention"</span>: [...],
+    <span class="s">"antibiotics"</span>: [...], <span class="s">"contagious"</span>: true,
+    <span class="s">"all_predictions"</span>: { <span class="s">"Lumpy"</span>: 0.94, <span class="s">"Healthy"</span>: 0.05, ... }
+  },
+  <span class="s">"data_source"</span>: <span class="s">"gemini_api_realtime"</span>,
+  <span class="s">"timestamp"</span>: <span class="s">"2026-..."</span>
+}</pre>
+
+  <!-- ===================== 12 AUTH ===================== -->
+  <h2 class="section" id="auth">12. Authentication &amp; Security</h2>
+  <h4>Flow</h4>
+  <div class="flow">SignUp ─POST /api/register/─▶ create User
+SignIn ─POST /api/token/───▶ { access, refresh }  ──▶ stored in localStorage
+Every request ── Authorization: Bearer &lt;access&gt; ──▶ JWTAuthentication
+401 ──▶ client clears token & redirects to /signin
+ProtectedRoute ──▶ blocks "/" if no access_token present</div>
+  <h4>Implemented protections</h4>
+  <ul>
+    <li>JWT access/refresh with rotation; passwords hashed by Django; password validators enabled.</li>
+    <li>File-size (10 MB) and file-type validation on uploads.</li>
+    <li>CORS + CSRF trusted-origin allow-lists; secure cookies when not in DEBUG.</li>
+    <li>Gemini API key kept server-side; error strings sanitized of the key.</li>
+    <li>Per-user data isolation — every query filters by <code>request.user</code>.</li>
+  </ul>
+  <div class="danger"><strong>Security caveats to address before production:</strong>
+  the default <code>SECRET_KEY</code> and DB password (<code>'12345'</code>) are hardcoded fallbacks in
+  <code>settings.py</code>; <code>DEBUG</code> defaults to <code>True</code> (which also enables
+  <code>CORS_ALLOW_ALL_ORIGINS</code>). These must be overridden by environment variables in any real
+  deployment. There is also no rate limiting on the auth or detection endpoints.</div>
+
+  <!-- ===================== 13 FRONTEND ===================== -->
+  <h2 class="section" id="frontend">13. Frontend Deep Dive (React)</h2>
+  <h3>13.1 Routing &amp; shell</h3>
+  <p><code>App.jsx</code> defines three routes: <code>/signup</code>, <code>/signin</code>, and <code>/</code>
+  (wrapped in <code>ProtectedRoute</code>). The protected home renders <code>Home.jsx</code>, a tabbed
+  dashboard with a sticky header, responsive sidebar, and six tabs. State (<code>activeTab</code>,
+  <code>latestDetection</code>, <code>refreshTrigger</code>) is lifted into <code>Home</code> so a successful
+  diagnosis auto-switches to the Results tab.</p>
+
+  <h3>13.2 Component responsibilities</h3>
+  <table>
+    <tr><th>Component</th><th>Role &amp; data</th></tr>
+    <tr><td><strong>Dashboard</strong></td><td>Fetches <code>/statistics/</code> + <code>/history/</code> in parallel; renders KPI cards, an area trend chart, a pathogen pie chart, and severity stratification (Recharts).</td></tr>
+    <tr><td><strong>ImageDiagnosis</strong></td><td>react-hook-form file input + preview, <code>useMutation</code> POSTs multipart to <code>/animal/detect/</code>, animated "scanning" overlay, 401 handling.</td></tr>
+    <tr><td><strong>SymptomDiagnosis</strong></td><td><code>useQuery</code> loads symptoms, searchable multi-select chips, posts to <code>/diagnose/</code>, renders ranked result cards.</td></tr>
+    <tr><td><strong>DiseaseResults</strong></td><td>Clinical report view; if treatment/prevention are missing it self-enriches by GET <code>/diseases/&lt;id&gt;/</code>. Shows contagion alert, prediction matrix, antibiotics.</td></tr>
+    <tr><td><strong>DetectionHistory</strong></td><td>Lists past detections with detail view.</td></tr>
+    <tr><td><strong>VetChat</strong></td><td>Conversational UI; persists history to localStorage; posts to <code>/animal/vetchat/</code>; quick-question buttons + typing indicator.</td></tr>
+    <tr><td><strong>ProtectedRoute / LogOut</strong></td><td>Token guard / clears tokens and redirects.</td></tr>
+  </table>
+
+  <h3>13.3 Conventions &amp; design language</h3>
+  <ul>
+    <li>State management: React Query for server state + mutations; local component state otherwise (no Redux).</li>
+    <li>API base URL from <code>import.meta.env.VITE_API_BASE_URL</code> with a localhost fallback.</li>
+    <li>Heavy Tailwind utility styling — a polished, "neural / clinical" aesthetic (gradients, blur, rounded-3xl cards, scan animations).</li>
+    <li>Icons via <code>lucide-react</code>; charts via <code>recharts</code>.</li>
+  </ul>
+  <div class="warn">Two near-duplicate API config files exist: <code>src/config/api.js</code> (env-aware, used by most components) and <code>src/api/index.js</code> (hardcoded localhost). Some components also inline the base URL directly. Consolidating to a single config module would reduce drift.</div>
+
+  <!-- ===================== 14 FLOWS ===================== -->
+  <h2 class="section" id="flows">14. Key User Flows</h2>
+  <h4>Image diagnosis (end to end)</h4>
+  <div class="flow">User picks image → ImageDiagnosis (FormData) → POST /api/animal/detect/
+   → temp file → CNN.predict() → label + confidence
+   → get_disease_info(force_fresh) → Gemini (or fallback JSON)
+   → save AnimalDetection → response.data
+   → Home.handleDiagnosisSuccess → switch to Results tab → DiseaseResults renders</div>
+  <h4>Symptom diagnosis</h4>
+  <div class="flow">Select symptoms → POST /api/diagnose/ {symptoms, animal_name, age, notes}
+   → DatasetProcessor.diagnose() top-5 → Gemini enriches best match
+   → save SymptomDiagnosis → results[] + saved_diagnosis → ranked cards + Results tab</div>
+
+  <!-- ===================== 15 DEPLOY ===================== -->
+  <h2 class="section" id="deploy">15. Setup &amp; Deployment</h2>
+  <h4>Local development</h4>
+  <pre><span class="c"># Backend</span>
+cd server
+pip install -r requirements.txt
+<span class="c"># set .env: SECRET_KEY, DB_*, GEMINI_API_KEY, DEBUG, ALLOWED_HOSTS</span>
+python manage.py migrate
+python manage.py runserver 8000
+
+<span class="c"># Frontend</span>
+cd client
+npm install
+<span class="c"># set VITE_API_BASE_URL=http://127.0.0.1:8000/api</span>
+npm run dev        <span class="c"># http://localhost:5173</span></pre>
+  <h4>Production targets</h4>
+  <ul>
+    <li><strong>API:</strong> Railway — <code>Procfile</code> (gunicorn), <code>runtime.txt</code> (Python version), WhiteNoise for static files; <code>ALLOWED_HOSTS</code> includes <code>.railway.app</code>.</li>
+    <li><strong>UI:</strong> Vercel — <code>vercel.json</code>; CORS/CSRF whitelist the Vercel domain.</li>
+    <li><strong>Env vars to set:</strong> <code>SECRET_KEY</code>, <code>DEBUG=False</code>, <code>DB_*</code>, <code>GEMINI_API_KEY</code>, <code>CORS_ALLOWED_ORIGINS</code>, <code>VITE_API_BASE_URL</code>.</li>
+  </ul>
+
+  <!-- ===================== 16 OBSERVATIONS ===================== -->
+  <h2 class="section" id="observations">16. Code Observations &amp; Notes</h2>
+  <p>Honest, constructive notes from reading the codebase — useful for a viva / report's "limitations &amp; future work" section.</p>
+  <table>
+    <tr><th>Area</th><th>Observation</th><th>Suggested improvement</th></tr>
+    <tr><td>Model scope</td><td>CNN only knows 3 classes (foot-and-mouth, lumpy, healthy) although the README/UI advertise 5+ diseases.</td><td>Align marketing copy with the trained model, or train on more classes.</td></tr>
+    <tr><td>Two diagnosis sources</td><td>Image path uses the CNN; symptom path uses a CSV keyword-matcher. The disease vocabularies differ (CSV has dozens of diseases).</td><td>Document the two as distinct features; unify disease IDs where possible.</td></tr>
+    <tr><td>TF loading</td><td>The cross-version loader in <code>views.py</code> is large and fragile.</td><td>Pin a single TF version; retrain once; simplify the loader.</td></tr>
+    <tr><td>Duplicate code</td><td><code>get_disease_info</code> defined twice; two API config files on the frontend.</td><td>De-duplicate.</td></tr>
+    <tr><td>Misplaced method</td><td><code>VetChatAPIView</code> contains a <code>patch(diagnosis_id)</code> method that looks like it belongs to the symptom-diagnosis detail view.</td><td>Move it to the correct view class.</td></tr>
+    <tr><td>Secrets</td><td>Hardcoded fallback <code>SECRET_KEY</code> / DB password; <code>DEBUG=True</code> default.</td><td>Require env vars; fail fast if missing in production.</td></tr>
+    <tr><td>Latency / cost</td><td><code>force_fresh=True</code> means every detection calls Gemini live (no caching).</td><td>Enable the 24h cache for non-critical lookups to cut latency &amp; quota use.</td></tr>
+    <tr><td>Dashboard filter</td><td>Dashboard hardcodes an <code>excludedDiseases</code> list to hide certain labels from charts.</td><td>Make filtering data-driven.</td></tr>
+  </table>
+
+  <!-- ===================== 17 ROADMAP ===================== -->
+  <h2 class="section" id="roadmap">17. Future Roadmap</h2>
+  <div class="grid">
+    <div class="card"><h4>Phase 2</h4><ul>
+      <li>More animal species &amp; disease classes</li>
+      <li>Real-time video diagnosis</li>
+      <li>Mobile app (iOS/Android)</li>
+      <li>Vet consultation booking</li>
+    </ul></div>
+    <div class="card"><h4>Phase 3+</h4><ul>
+      <li>Treatment progress tracking</li>
+      <li>PDF report export</li>
+      <li>Multi-language support</li>
+      <li>IoT sensor / cloud integration</li>
+    </ul></div>
+  </div>
+
+  <div class="note"><strong>How to convert this file to a Word/PDF document:</strong>
+  open <code>PROJECT_DOCUMENTATION.html</code> in any browser →
+  <em>Ctrl+P</em> → "Save as PDF". For a <code>.docx</code>, open the HTML directly in Microsoft Word
+  (File → Open) and Save As Word Document — the styling and tables are preserved.</div>
+
+  </div><!-- /content -->
+
+  <footer>
+    VetAI Diagnostics — Final Year Project Technical Documentation · Generated from a full source-code review<br>
+    Backend: Django 5 + DRF · ML: TensorFlow MobileNetV2 + Google Gemini · Frontend: React 19 + Vite + Tailwind
+  </footer>
+
+</div><!-- /page -->
+</body>
+</html>

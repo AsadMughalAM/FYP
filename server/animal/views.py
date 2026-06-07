@@ -1151,8 +1151,15 @@ class VetChatAPIView(APIView):
         normalized_history = []
         if isinstance(history, list):
             for item in history[-10:]:
-                role = item.get("role") if isinstance(item, dict) else None
-                text = item.get("text") if isinstance(item, dict) else None
+                if not isinstance(item, dict):
+                    continue
+                role = item.get("role")
+                # Accept both {role, text} and Gemini-style {role, parts:[{text}]}
+                text = item.get("text")
+                if not text:
+                    parts = item.get("parts")
+                    if isinstance(parts, list) and parts and isinstance(parts[0], dict):
+                        text = parts[0].get("text")
                 if role in ("user", "model") and isinstance(text, str) and text.strip():
                     normalized_history.append(
                         {"role": role, "parts": [{"text": text.strip()}]}
@@ -1161,6 +1168,8 @@ class VetChatAPIView(APIView):
         request_body = {
             "contents": [
                 {"role": "user", "parts": [{"text": self._build_system_prompt()}]},
+                {"role": "model", "parts": [{"text": "Understood. I will provide professional, "
+                                                     "safety-first veterinary guidance."}]},
                 *normalized_history,
                 {"role": "user", "parts": [{"text": user_message}]},
             ],
@@ -1168,8 +1177,17 @@ class VetChatAPIView(APIView):
                 "temperature": 0.7,
                 "topK": 40,
                 "topP": 0.95,
-                "maxOutputTokens": 1024,
+                # gemini-2.5-flash is a "thinking" model; a small budget can be fully
+                # consumed by reasoning tokens, leaving no visible text (MAX_TOKENS).
+                # A larger budget ensures an actual reply is produced.
+                "maxOutputTokens": 2048,
             },
+            "safetySettings": [
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_ONLY_HIGH"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"},
+            ],
         }
 
         fallback_models_raw = os.environ.get("GEMINI_FALLBACK_MODELS", "")
@@ -1199,17 +1217,30 @@ class VetChatAPIView(APIView):
                     data = response.json()
                     candidates = data.get("candidates") or []
                     if not candidates:
-                        last_error = "Gemini returned no candidates"
+                        # Could be a prompt-level safety block
+                        block_reason = (data.get("promptFeedback") or {}).get("blockReason")
+                        last_error = f"Gemini returned no candidates (blockReason={block_reason})"
                         continue
 
-                    parts = candidates[0].get("content", {}).get("parts", [])
-                    if not parts or "text" not in parts[0]:
-                        last_error = "Gemini returned unexpected response format"
+                    candidate = candidates[0]
+                    finish_reason = candidate.get("finishReason")
+                    parts = candidate.get("content", {}).get("parts", []) or []
+
+                    # Join text from ALL parts (a thinking model may split output).
+                    reply_text = "".join(
+                        p.get("text", "") for p in parts if isinstance(p, dict)
+                    ).strip()
+
+                    if not reply_text:
+                        last_error = (
+                            f"Empty reply from {model} (finishReason={finish_reason}). "
+                            "Likely truncated or filtered."
+                        )
                         continue
 
                     return Response(
                         {
-                            "reply": parts[0]["text"].strip(),
+                            "reply": reply_text,
                             "model": model,
                         },
                         status=status.HTTP_200_OK,

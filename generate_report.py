@@ -11,7 +11,7 @@ in a natural, project-specific academic voice.
 from docx import Document
 from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
-from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.table import WD_TABLE_ALIGNMENT, WD_CELL_VERTICAL_ALIGNMENT
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
@@ -122,15 +122,21 @@ def make_table(headers, rows, widths=None, title=None):
         rp.bold = True
         rp.font.size = Pt(11)
         shd = OxmlElement("w:shd")
-        shd.set(qn("w:fill"), "1F3864")
+        shd.set(qn("w:val"), "clear")
+        shd.set(qn("w:color"), "auto")
+        shd.set(qn("w:fill"), "D9D9D9")  # light grey header, like the reference
         hdr[i]._tc.get_or_add_tcPr().append(shd)
-        rp.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
+        rp.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
+        hdr[i].vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+        hdr[i].paragraphs[0].paragraph_format.space_after = Pt(0)
     for row in rows:
         cells = t.add_row().cells
         for i, val in enumerate(row):
             cells[i].text = ""
             rr = cells[i].paragraphs[0].add_run(str(val))
             rr.font.size = Pt(10.5)
+            cells[i].vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+            cells[i].paragraphs[0].paragraph_format.space_after = Pt(0)
     if widths:
         for i, w in enumerate(widths):
             for row in t.rows:
@@ -156,11 +162,37 @@ def code_block(lines):
     for ln in lines:
         p = doc.add_paragraph()
         r = p.add_run(ln)
-        r.font.name = "Consolas"
-        r.font.size = Pt(9.5)
+        r.font.size = Pt(10.5)
         p.paragraph_format.space_after = Pt(0)
-        p.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
     doc.add_paragraph()
+
+
+def _set_run_font(run, name="Times New Roman"):
+    run.font.name = name
+    rpr = run._element.get_or_add_rPr()
+    rfonts = rpr.find(qn("w:rFonts"))
+    if rfonts is None:
+        rfonts = OxmlElement("w:rFonts")
+        rpr.append(rfonts)
+    for attr in ("w:ascii", "w:hAnsi", "w:eastAsia", "w:cs"):
+        rfonts.set(qn(attr), name)
+
+
+def finalize_fonts_and_spacing():
+    """Force Times New Roman + 1.5 line spacing across the ENTIRE document:
+    every body paragraph and every table cell paragraph, including headings,
+    lists, captions, references and code blocks."""
+    def fix_paragraph(p):
+        p.paragraph_format.line_spacing_rule = WD_LINE_SPACING.ONE_POINT_FIVE
+        for run in p.runs:
+            _set_run_font(run)
+    for p in doc.paragraphs:
+        fix_paragraph(p)
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for p in cell.paragraphs:
+                    fix_paragraph(p)
 
 
 CENTER = WD_ALIGN_PARAGRAPH.CENTER
@@ -501,6 +533,7 @@ body("The problem this project addresses is therefore the absence of an accessib
      "structured, readable assessment that includes a probable diagnosis, a severity level, treatment and "
      "prevention guidance, and a clear warning when a condition is contagious, all while reminding the user "
      "that the result must be confirmed by a professional.")
+figure_placeholder("Figure 1.1: Manual veterinary diagnosis versus the proposed AI-assisted workflow")
 
 h2("1.4 Aims and Objectives")
 h3("1.4.1 Primary Aim")
@@ -1421,6 +1454,7 @@ code_block([
     '}',
 ])
 
+finalize_fonts_and_spacing()
 doc.save(r"e:\HOme\FinalFYP\VetAI_Diagnostics_FYP_Report.docx")
 print("SAVED: VetAI_Diagnostics_FYP_Report.docx")
 print("paragraphs:", len(doc.paragraphs), "tables:", len(doc.tables))

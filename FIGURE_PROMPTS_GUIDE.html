@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VetAI Diagnostics — Figure Generation Guide</title>
+<style>
+  :root{--blue:#2563eb;--blue-dark:#1e3a8a;--slate:#1e293b;--muted:#64748b;--bg:#f8fafc;--line:#e2e8f0;--green:#059669;--amber:#d97706;}
+  *{box-sizing:border-box;}
+  body{font-family:"Segoe UI",Roboto,Arial,sans-serif;color:var(--slate);line-height:1.6;margin:0;background:var(--bg);font-size:15px;}
+  .page{max-width:1000px;margin:0 auto;background:#fff;}
+  .cover{background:linear-gradient(135deg,#1e3a8a,#2563eb 60%,#3b82f6);color:#fff;padding:54px 50px;text-align:center;}
+  .cover h1{font-size:34px;margin:0 0 8px;font-weight:800;}
+  .cover p{opacity:.9;margin:4px 0;font-size:15px;}
+  .content{padding:38px 50px 70px;}
+  h2.section{font-size:23px;color:var(--blue-dark);border-bottom:3px solid var(--blue);padding-bottom:7px;margin-top:40px;font-weight:800;}
+  .fig{border:1px solid var(--line);border-radius:14px;margin:26px 0;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+  .fig .head{background:#1e3a8a;color:#fff;padding:12px 20px;font-size:17px;font-weight:700;}
+  .fig .inner{padding:18px 22px;}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+  .meta span{font-size:12px;font-weight:700;padding:3px 10px;border-radius:6px;}
+  .loc{background:#dbeafe;color:#1e40af;} .tool{background:#dcfce7;color:#166534;} .type{background:#fef3c7;color:#92400e;}
+  .lbl{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--blue);margin:14px 0 5px;}
+  .prompt{background:#f1f5f9;border-left:4px solid var(--blue);padding:12px 16px;border-radius:0 8px 8px 0;font-size:14px;}
+  pre{background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:9px;overflow-x:auto;font-family:Consolas,monospace;font-size:12.5px;line-height:1.5;white-space:pre;margin:6px 0;}
+  .note{border-left:4px solid var(--green);background:#ecfdf5;padding:12px 16px;border-radius:0 8px 8px 0;margin:14px 0;font-size:14px;}
+  .warn{border-left:4px solid var(--amber);background:#fffbeb;padding:12px 16px;border-radius:0 8px 8px 0;margin:14px 0;font-size:14px;}
+  code{background:#eef2f7;color:#be123c;padding:1px 5px;border-radius:4px;font-family:Consolas,monospace;font-size:13px;}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px;}
+  th{background:#1e3a8a;color:#fff;text-align:left;padding:8px 11px;}
+  td{border:1px solid var(--line);padding:7px 11px;}
+  a{color:var(--blue);}
+  footer{text-align:center;padding:26px;color:var(--muted);font-size:12px;border-top:1px solid var(--line);}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="cover">
+    <h1>🖼️ Figure Generation Guide</h1>
+    <p>VetAI Diagnostics — FYP Report ki 14 figures ke prompts, locations &amp; diagram code</p>
+  </div>
+  <div class="content">
+
+  <h2 class="section">📌 Pehle yeh parh lein (Important)</h2>
+  <div class="warn"><strong>AI image generators (DALL·E, Midjourney) technical diagrams ka text kharab kar dete hain</strong>
+  (labels ulte-seedhe aate hain). Is liye is guide mein 2 cheezein di hain:
+  <ul style="margin:6px 0;">
+    <li><strong>Mermaid / PlantUML code</strong> — diagrams ke liye (architecture, flowchart, ER, UML, sequence). Yeh paste karke <b>perfect, clean</b> diagram milta hai. <em>Ye recommended hai.</em></li>
+    <li><strong>Text prompt</strong> — agar aap AI image / diagram-AI tool (Napkin AI, Eraser DiagramGPT, ChatGPT) use karna chahein.</li>
+  </ul></div>
+
+  <table>
+    <tr><th>Figure type</th><th>Sabse behtar tool</th></tr>
+    <tr><td>Flowchart / Architecture / Component tree / ER / Sequence</td><td><b>Mermaid</b> → <a href="https://mermaid.live">mermaid.live</a> (code paste → PNG/SVG export). Ya draw.io</td></tr>
+    <tr><td>Use-case &amp; sequence (UML)</td><td><b>PlantUML</b> → <a href="https://www.plantuml.com/plantuml">plantuml.com/plantuml</a></td></tr>
+    <tr><td>CNN / Neural network architecture</td><td><b>NN-SVG</b> → <a href="https://alexlenail.me/NN-SVG">alexlenail.me/NN-SVG</a>, ya Mermaid</td></tr>
+    <tr><td>Conceptual illustration (Fig 1.1)</td><td>AI image tool (DALL·E / Napkin) — text prompt diya hai</td></tr>
+    <tr><td>Bar chart (Fig 5.1)</td><td>Excel / Python matplotlib, ya app ka real screenshot</td></tr>
+    <tr><td>App screenshots (Fig 5.2)</td><td><b>Apni chalti hui app ke real screenshots</b> (generate na karein)</td></tr>
+  </table>
+  <div class="note"><strong>Mermaid use karne ka tareeqa:</strong> <a href="https://mermaid.live">mermaid.live</a> kholein → code box mein neeche diya code paste karein → right side preview banega → <em>Actions → PNG/SVG</em> se download karke Word mein placeholder ki jagah paste kar dein.</div>
+
+  <!-- ===================== FIG 1.1 ===================== -->
+  <div class="fig">
+    <div class="head">Figure 1.1 — Manual vs AI-Assisted Diagnosis Workflow</div>
+    <div class="inner">
+      <div class="meta">
+        <span class="loc">📍 Chapter 1 › 1.3 Problem Statement (end)</span>
+        <span class="tool">🛠 AI image OR Mermaid</span>
+        <span class="type">Conceptual comparison</span>
+      </div>
+      <div class="lbl">AI Image Prompt</div>
+      <div class="prompt">A clean, flat-design infographic comparing two workflows side by side, light background, professional.
+      LEFT column titled "Traditional Diagnosis": a worried farmer with a sick cow, then a clock showing delay,
+      then travel to a distant vet, then a late diagnosis — slow, red/grey tones.
+      RIGHT column titled "VetAI Diagnostics": a farmer taking a phone photo of a cow, an AI brain/scan icon,
+      then an instant report card on the phone showing disease + treatment — fast, blue/green tones.
+      A big arrow showing "hours/days" on the left vs "seconds" on the right. Minimal text labels, vector style.</div>
+      <div class="lbl">Mermaid alternative (cleaner labels)</div>
+<pre>flowchart LR
+  subgraph T["Traditional (slow)"]
+    A1[Sick cow noticed] --> A2[Wait / arrange vet]
+    A2 --> A3[Travel or vet visit]
+    A3 --> A4[Diagnosis after hours/days]
+  end
+  subgraph V["VetAI Diagnostics (fast)"]
+    B1[Take photo / pick symptoms] --> B2[AI prediction + confidence]
+    B2 --> B3[Gemini guidance]
+    B3 --> B4[Instant report in seconds]
+  end
+  style T fill:#fee2e2,stroke:#dc2626
+  style V fill:#dcfce7,stroke:#059669</pre>
+    </div>
+  </div>
+
+  <!-- ===================== FIG 1.2 ===================== -->
+  <div class="fig">
+    <div class="head">Figure 1.2 — Iterative Development Methodology</div>
+    <div class="inner">
+      <div class="meta">
+        <span class="loc">📍 Chapter 1 › 1.7 Development Methodology</span>
+        <span class="tool">🛠 Mermaid</span>
+        <span class="type">Cycle diagram</span>
+      </div>
+      <div class="lbl">Mermaid (recommended)</div>
+<pre>flowchart LR
+  P[Plan increment] --> I[Implement] --> T[Manual test] --> R[Review] --> P
+  R -.next increment.-> P
+  subgraph Increments delivered in order
+    direction TB
+    S1[1. Auth + app shell] --> S2[2. Symptom engine]
+    S2 --> S3[3. Image model + inference]
+    S3 --> S4[4. Gemini integration]
+    S4 --> S5[5. Dashboard + history]
+  end</pre>
+      <div class="lbl">AI image prompt (alternative)</div>
+      <div class="prompt">A circular iterative software-development cycle diagram with four stages arranged in a loop:
+      Plan → Implement → Test → Review, with a curved arrow returning to Plan. Beside it, a vertical list of
+      five increments delivered in order: Authentication, Symptom engine, Image model, Gemini integration,
+      Dashboard. Flat vector style, blue and teal palette, minimal clean labels.</div>
+    </div>
+  </div>
+
+  <!-- ===================== FIG 3.1 ===================== -->
+  <div class="fig">
+    <div class="head">Figure 3.1 — Overall Three-Tier System Architecture</div>
+    <div class="inner">
+      <div class="meta">
+        <span class="loc">📍 Chapter 3 › 3.2 Overall System Architecture</span>
+        <span class="tool">🛠 Mermaid / draw.io</span>
+        <span class="type">Architecture</span>
+      </div>
+      <div class="lbl">Mermaid (recommended)</div>
+<pre>flowchart TB
+  subgraph Presentation["Presentation Tier — Browser"]
+    UI[React SPA + Vite + Tailwind<br/>Dashboard, Diagnosis, Chat, History]
+  end
+  subgraph Application["Application Tier — Django REST Framework"]
+    API[REST API + JWT Auth]
+    A1[accounts app]
+    A2[animal app: views, gemini_service,<br/>dataset_processor]
+    A3[ml_model app: CNN + training]
+    API --- A1 & A2 & A3
+  end
+  subgraph Data["Data Tier"]
+    DB[(MySQL<br/>users + records)]
+    GEM{{Google Gemini API}}
+    MODEL[/TensorFlow MobileNetV2 model/]
+  end
+  UI -->|HTTPS + Bearer token| API
+  A2 --> DB
+  A2 -->|requests| GEM
+  A3 --> MODEL
+  style Presentation fill:#eff6ff,stroke:#2563eb
+  style Application fill:#f0fdf4,stroke:#059669
+  style Data fill:#fef9c3,stroke:#d97706</pre>
+    </div>
+  </div>
+
+  <!-- ===================== FIG 3.2 ===================== -->
+  <div class="fig">
+    <div class="head">Figure 3.2 — Use-Case Diagram</div>
+    <div class="inner">
+      <div class="meta">
+        <span class="loc">📍 Chapter 3 › 3.3 Use Case Analysis</span>
+        <span class="tool">🛠 PlantUML</span>
+        <span class="type">UML use-case</span>
+      </div>
+      <div class="lbl">PlantUML (paste at plantuml.com/plantuml)</div>
+<pre>@startuml
+left to right direction
+actor "Registered User" as U
+actor "Gemini Service" as G
+rectangle "VetAI Diagnostics" {
+  usecase "Register / Log in" as UC1
+  usecase "Diagnose from image" as UC2
+  usecase "Diagnose from symptoms" as UC3
+  usecase "View report" as UC4
+  usecase "Ask the assistant" as UC5
+  usecase "View history" as UC6
+  usecase "View dashboard" as UC7
+}
+U --> UC1
+U --> UC2
+U --> UC3
+U --> UC4
+U --> UC5
+U --> UC6
+U --> UC7
+UC2 ..> G : provides guidance
+UC3 ..> G
+UC5 ..> G
+@enduml</pre>
+    </div>
+  </div>
+
+  <!-- ===================== FIG 3.3 ===================== -->
+  <div class="fig">
+    <div class="head">Figure 3.3 — Image Diagnosis Pipeline</div>
+    <div class="inner">
+      <div class="meta">
+        <span class="loc">📍 Chapter 3 › 3.4 Image Diagnosis Pipeline</span>
+        <span class="tool">🛠 Mermaid</span>
+        <span class="type">Flowchart</span>
+      </div>
+      <div class="lbl">Mermaid (recommended)</div>
+<pre>flowchart TB
+  U[User uploads image] --> V{Valid?<br/>size &le; 10MB, type ok}
+  V -- No --> E[Return error message]
+  V -- Yes --> TMP[Save to temp file]
+  TMP --> PRE[Load 224x224, model rescales]
+  PRE --> CNN[MobileNetV2 CNN predict]
+  CNN --> CONF[Disease + confidence score]
+  CONF --> LOW{Confidence low?}
+  LOW -- Yes --> WARN[Add 'verify with vet' warning]
+  LOW -- No --> GEM[Fetch guidance from Gemini]
+  WARN --> GEM
+  GEM --> SAVE[(Save AnimalDetection record)]
+  SAVE --> RPT[Return report to frontend]</pre>
+    </div>
+  </div>
+
+  <!-- ===================== FIG 3.4 ===================== -->
+  <div class="fig">
+    <div class="head">Figure 3.4 — Symptom Diagnosis Scoring &amp; Enrichment Flow</div>
+    <div class="inner">
+      <div class="meta">
+        <span class="loc">📍 Chapter 3 › 3.5 Symptom Diagnosis Engine</span>
+        <span class="tool">🛠 Mermaid</span>
+        <span class="type">Flowchart</span>
+      </div>
+      <div class="lbl">Mermaid (recommended)</div>
+<pre>flowchart TB
+  S[User selects symptoms] --> N[Normalize symptom names]
+  N --> M[Match against every disease<br/>in CSV dataset]
+  M --> SC["Score = 0.6 x match_ratio<br/>+ 0.4 x coverage"]
+  SC --> TOP[Rank and take top 5]
+  TOP --> BEST[Best match]
+  BEST --> GEM[Enrich best match via Gemini]
+  GEM --> SAVE[(Save SymptomDiagnosis)]
+  SAVE --> CARDS[Show ranked result cards]</pre>
+    </div>
+  </div>
+
+  <!-- ===================== FIG 3.5 ===================== -->
+  <div class="fig">
+    <div class="head">Figure 3.5 — Gemini Request, Retry &amp; Fallback Logic</div>
+    <div class="inner">
+      <div class="meta">
+        <span class="loc">📍 Chapter 3 › 3.6 Generative AI Integration Design</span>
+        <span class="tool">🛠 Mermaid</span>
+        <span class="type">Decision flowchart</span>
+      </div>
+      <div class="lbl">Mermaid (recommended)</div>
+<pre>flowchart TB
+  P[Build strict JSON prompt] --> TRY[Try model + API version]
+  TRY --> OK{HTTP 200 with<br/>usable text?}
+  OK -- No --> MORE{More models /<br/>versions left?}
+  MORE -- Yes --> TRY
+  MORE -- No --> FB[(Local JSON fallback)]
+  FB --> DEF[Else safe default:<br/>'consult a veterinarian']
+  OK -- Yes --> PARSE[Parse + repair JSON]
+  PARSE --> COMP{Complete &amp;<br/>valid?}
+  COMP -- No, truncated --> RETRY[Retry with compact prompt]
+  RETRY --> OK
+  COMP -- Yes --> RET[Return real-time guidance]
+  style FB fill:#fef9c3,stroke:#d97706
+  style RET fill:#dcfce7,stroke:#059669</pre>
+    </div>
+  </div>
+
+  <!-- ===================== FIG 3.6 ===================== -->
+  <div class="fig">
+    <div class="head">Figure 3.6 — Entity-Relationship Diagram</div>
+    <div class="inner">
+      <div class="meta">
+        <span class="loc">📍 Chapter 3 › 3.7 Database Design</span>
+        <span class="tool">🛠 Mermaid (erDiagram)</span>
+        <span class="type">ER diagram</span>
+      </div>
+      <div class="lbl">Mermaid (recommended)</div>
+<pre>erDiagram
+  USER ||--o{ ANIMAL_DETECTION : has
+  USER ||--o{ SYMPTOM_DIAGNOSIS : has
+  USER {
+    int id PK
+    string username
+    string email
+    string password_hash
+  }
+  ANIMAL_DETECTION {
+    int id PK
+    int user_id FK
+    string image
+    string disease_name
+    float confidence_score
+    string severity
+    json symptoms
+    json treatment
+    json prevention
+    json antibiotics
+    bool contagious
+    json all_predictions
+    string status
+    datetime created_at
+  }
+  SYMPTOM_DIAGNOSIS {
+    int id PK
+    int user_id FK
+    json input_symptoms
+    string disease_name
+    float confidence_score
+    float match_rate
+    json matched_symptoms
+    json treatment
+    json prevention
+    json medicines
+    bool contagious
+    json all_results
+    datetime created_at
+  }</pre>
+    </div>
+  </div>
+
+  <!-- ===================== FIG 4.1 ===================== -->
+  <div class="fig">
+    <div class="head">Figure 4.1 — Backend Application Structure</div>
+    <div class="inner">
+      <div class="meta">
+        <span class="loc">📍 Chapter 4 › 4.3.1 Project Structure</span>
+        <span class="tool">🛠 Mermaid</span>
+        <span class="type">Package / tree</span>
+      </div>
+      <div class="lbl">Mermaid (recommended)</div>
+<pre>flowchart TB
+  ROOT[server/ Django project]
+  ROOT --> CFG[server/ settings, urls, wsgi/asgi]
+  ROOT --> ACC[accounts/<br/>register view, serializer]
+  ROOT --> ANI[animal/]
+  ROOT --> ML[ml_model/]
+  ANI --> V[views.py — API endpoints]
+  ANI --> MOD[models.py — AnimalDetection,<br/>SymptomDiagnosis]
+  ANI --> GS[gemini_service.py]
+  ANI --> DP[dataset_processor.py]
+  ML --> DD[disease_detector.py — CNN]
+  ML --> JSON[disease_info.json — fallback]
+  ML --> TM[trained_models/ .h5, classes]</pre>
+    </div>
+  </div>
+
+  <!-- ===================== FIG 4.2 ===================== -->
+  <div class="fig">
+    <div class="head">Figure 4.2 — Convolutional Neural Network Architecture</div>
+    <div class="inner">
+      <div class="meta">
+        <span class="loc">📍 Chapter 4 › 4.4 Model Training</span>
+        <span class="tool">🛠 NN-SVG or Mermaid</span>
+        <span class="type">Layer diagram</span>
+      </div>
+      <div class="note">Best: <a href="https://alexlenail.me/NN-SVG">NN-SVG</a> ("FCNN" or "AlexNet" style) se ek professional neural-net image banegi. Ya neeche Mermaid block-diagram use karein.</div>
+      <div class="lbl">Mermaid (recommended for clean labels)</div>
+<pre>flowchart LR
+  IN[Input<br/>224x224x3] --> RS[Rescaling<br/>÷255]
+  RS --> MN[MobileNetV2 base<br/>ImageNet, frozen]
+  MN --> GP[GlobalAveragePooling2D<br/>1280]
+  GP --> D1[Dense 256 + ReLU]
+  D1 --> DR1[Dropout 0.5]
+  DR1 --> D2[Dense 128 + ReLU]
+  D2 --> DR2[Dropout 0.3]
+  DR2 --> OUT[Dense softmax<br/>3 classes]
+  style MN fill:#dbeafe,stroke:#2563eb
+  style OUT fill:#dcfce7,stroke:#059669</pre>
+    </div>
+  </div>
+
+  <!-- ===================== FIG 4.3 ===================== -->
+  <div class="fig">
+    <div class="head">Figure 4.3 — Frontend Component Hierarchy</div>
+    <div class="inner">
+      <div class="meta">
+        <span class="loc">📍 Chapter 4 › 4.5.1 Application Structure</span>
+        <span class="tool">🛠 Mermaid</span>
+        <span class="type">Component tree</span>
+      </div>
+      <div class="lbl">Mermaid (recommended)</div>
+<pre>flowchart TB
+  APP[App.jsx + Router] --> SI[SignIn]
+  APP --> SU[SignUp]
+  APP --> PR[ProtectedRoute]
+  PR --> HOME[Home — tabbed shell]
+  HOME --> DASH[Dashboard]
+  HOME --> IMG[ImageDiagnosis]
+  HOME --> SYM[SymptomDiagnosis]
+  HOME --> RES[DiseaseResults]
+  HOME --> HIS[DetectionHistory]
+  HOME --> CHAT[VetChat]
+  HOME --> LO[LogOut]</pre>
+    </div>
+  </div>
+
+  <!-- ===================== FIG 4.4 ===================== -->
+  <div class="fig">
+    <div class="head">Figure 4.4 — JWT Authentication Token Flow</div>
+    <div class="inner">
+      <div class="meta">
+        <span class="loc">📍 Chapter 4 › 4.6.1 JWT Token Flow</span>
+        <span class="tool">🛠 Mermaid (sequence)</span>
+        <span class="type">Sequence diagram</span>
+      </div>
+      <div class="lbl">Mermaid (recommended)</div>
+<pre>sequenceDiagram
+  participant U as User
+  participant F as React Frontend
+  participant B as Django + SimpleJWT
+  participant D as MySQL
+  U->>F: Enter username + password
+  F->>B: POST /api/token/
+  B->>D: Verify credentials
+  D-->>B: User OK
+  B-->>F: access (24h) + refresh (7d)
+  F->>F: Store tokens in localStorage
+  Note over F,B: For every protected request
+  F->>B: Request + Authorization: Bearer access
+  B->>B: JWTAuthentication verifies token
+  B-->>F: 200 data  (or 401 if expired)
+  F->>F: On 401 → clear token, go to /signin</pre>
+    </div>
+  </div>
+
+  <!-- ===================== FIG 5.1 ===================== -->
+  <div class="fig">
+    <div class="head">Figure 5.1 — Confidence Distribution Across Sample Predictions</div>
+    <div class="inner">
+      <div class="meta">
+        <span class="loc">📍 Chapter 5 › 5.5 Reliability (after the table)</span>
+        <span class="tool">🛠 Excel / matplotlib / real dashboard</span>
+        <span class="type">Bar chart</span>
+      </div>
+      <div class="note">Behtareen: apne <b>real data</b> se banayein. Agar real numbers nahi hain to neeche sample data se chart bana lein (Excel mein paste karke bar chart). Aap chahein to apne app ke dashboard ka pie/area chart bhi screenshot le sakte hain.</div>
+      <div class="lbl">Python (matplotlib) — sample, real values se replace karein</div>
+<pre>import matplotlib.pyplot as plt
+diseases = ['Foot &amp; Mouth', 'Lumpy Skin', 'Healthy']
+confidence = [0.93, 0.90, 0.96]   # apne real averages daalein
+plt.bar(diseases, [c*100 for c in confidence], color=['#2563eb','#7c3aed','#059669'])
+plt.ylabel('Average confidence (%)'); plt.ylim(0,100)
+plt.title('Prediction confidence by class')
+plt.savefig('fig5_1.png', dpi=200, bbox_inches='tight')</pre>
+    </div>
+  </div>
+
+  <!-- ===================== FIG 5.2 ===================== -->
+  <div class="fig">
+    <div class="head">Figure 5.2 — Application Screenshots</div>
+    <div class="inner">
+      <div class="meta">
+        <span class="loc">📍 Chapter 5 › 5.8 User Interface Assessment</span>
+        <span class="tool">📸 Real screenshots (generate NA karein)</span>
+        <span class="type">Screenshots</span>
+      </div>
+      <div class="note"><strong>Yeh generate nahi karni</strong> — apni chalti hui app ke asli screenshots lein, kyunki examiner ko real UI dekhna hota hai. 3 screenshots lein aur collage/grid bana dein:
+      <ul style="margin:6px 0;">
+        <li>Dashboard (charts + KPI cards)</li>
+        <li>Image Diagnosis ya Symptom Diagnosis screen</li>
+        <li>Diagnosis Results / report (severity, treatment, contagion warning)</li>
+      </ul>
+      Tip: browser ko 1280px width par rakhein, clean data ke saath screenshot lein, phir teeno ko ek image mein arrange kar dein (PowerPoint/Canva).</div>
+    </div>
+  </div>
+
+  <!-- ===================== BONUS LOGO ===================== -->
+  <div class="fig">
+    <div class="head">Bonus — Title Page Logo (figure number nahi)</div>
+    <div class="inner">
+      <div class="meta"><span class="loc">📍 Title Page 1</span><span class="type">Logo</span></div>
+      <p style="font-size:14px;">Title page par "University / Department Logo" placeholder hai — yahan apni <b>University of Lahore ka official logo</b> daalein (generate na karein, official PNG use karein).</p>
+    </div>
+  </div>
+
+  <h2 class="section">✅ Word mein figure kaise daalein</h2>
+  <ol style="font-size:14px;">
+    <li>Tool se figure ko <b>PNG</b> (ya SVG) export karein.</li>
+    <li>Word mein report kholein → us figure ka <code>[ Insert figure / diagram here ]</code> placeholder line dhoondein.</li>
+    <li>Placeholder ki italic line ko select karke delete karein.</li>
+    <li>Usi jagah <em>Insert → Pictures</em> se apni image daal dein. Niche jo bold caption (<code>Figure X.Y: ...</code>) pehle se hai usay rehne dein.</li>
+    <li>Image ko center karein aur width ~6 inch rakhein taa-ke margins ke andar fit ho.</li>
+  </ol>
+
+  </div>
+  <footer>VetAI Diagnostics — Figure Generation Guide · 14 figures · Mermaid/PlantUML code + AI prompts<br>
+  Diagrams: mermaid.live · plantuml.com · alexlenail.me/NN-SVG · Screenshots: apni app se</footer>
+</div>
+</body>
+</html>

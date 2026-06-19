@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VetAI Diagnostics — Technical Study Guide (Viva Prep)</title>
+<style>
+  :root{
+    --teal:#0D8C7D; --teal-dk:#0A6B60; --teal-lt:#EDF6F4; --teal-lt2:#D9EDE9;
+    --navy:#16223A; --body:#3B475E; --muted:#8A95A6; --line:#E4ECEC;
+    --bg:#F6F9F9; --white:#fff; --red:#C0392B; --amber:#D38B10;
+    --code-bg:#16223A; --code-tx:#D9EDE9;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;color:var(--body);
+       background:var(--bg);line-height:1.6;font-size:16px}
+  .wrap{display:flex;max-width:1280px;margin:0 auto;gap:0}
+  /* sidebar */
+  nav.toc{position:sticky;top:0;align-self:flex-start;height:100vh;overflow-y:auto;
+       width:280px;min-width:280px;background:var(--navy);color:#C7D3E3;padding:24px 18px}
+  nav.toc h2{color:#fff;font-size:15px;letter-spacing:.5px;text-transform:uppercase;margin:0 0 4px}
+  nav.toc .sub{color:var(--teal-lt2);font-size:12px;margin-bottom:18px}
+  nav.toc a{display:block;color:#AEBBD0;text-decoration:none;font-size:13.5px;padding:5px 8px;border-radius:6px;margin:1px 0}
+  nav.toc a:hover{background:rgba(255,255,255,.08);color:#fff}
+  nav.toc a.grp{margin-top:12px;color:var(--teal-lt2);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+  /* content */
+  main{flex:1;min-width:0;padding:40px 48px 80px;background:var(--white)}
+  header.hero{background:linear-gradient(135deg,#16223A 0%,#0A6B60 130%);color:#fff;
+       margin:-40px -48px 36px;padding:46px 48px 38px;border-bottom:5px solid var(--teal)}
+  header.hero .ey{color:var(--teal-lt2);font-weight:700;letter-spacing:1.5px;font-size:13px;text-transform:uppercase}
+  header.hero h1{margin:8px 0 6px;font-size:34px;line-height:1.15}
+  header.hero p{margin:6px 0 0;color:#C7D3E3;font-size:15.5px;max-width:760px}
+  header.hero .meta{margin-top:16px;font-size:12.5px;color:#9FB0C8}
+  h2.sec{color:var(--navy);font-size:25px;margin:46px 0 6px;padding-top:10px;border-top:3px solid var(--teal);
+       display:inline-block;padding-right:30px}
+  .sec-tag{display:block;color:var(--teal);font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;margin-top:30px}
+  h3{color:var(--navy);font-size:19px;margin:26px 0 8px}
+  h4{color:var(--teal-dk);font-size:16px;margin:18px 0 6px}
+  p{margin:8px 0}
+  .ur{color:var(--body)}
+  .lead{font-size:16.5px;color:var(--body)}
+  code{background:var(--teal-lt);color:var(--teal-dk);padding:1.5px 6px;border-radius:5px;font-family:'Consolas',monospace;font-size:13.5px}
+  pre{background:var(--code-bg);color:var(--code-tx);padding:16px 18px;border-radius:10px;overflow-x:auto;
+       font-family:'Consolas',monospace;font-size:13px;line-height:1.55;margin:12px 0}
+  pre .c{color:#7E93A8}  pre .k{color:#8BD0C4}  pre .s{color:#E6C07B}
+  ul,ol{margin:8px 0;padding-left:24px}
+  li{margin:5px 0}
+  .card{background:var(--white);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:14px 0;
+       box-shadow:0 1px 3px rgba(22,34,58,.05)}
+  .card.tl{border-left:5px solid var(--teal)}
+  .note{background:var(--teal-lt);border:1px solid var(--teal-lt2);border-radius:10px;padding:14px 18px;margin:14px 0}
+  .note b{color:var(--teal-dk)}
+  .warn{background:#FDF6EC;border:1px solid #F2D9A8;border-left:5px solid var(--amber);border-radius:10px;padding:14px 18px;margin:14px 0}
+  .warn b{color:#9A6A06}
+  .danger{background:#FBEDEB;border:1px solid #F0C8C2;border-left:5px solid var(--red);border-radius:10px;padding:14px 18px;margin:14px 0}
+  .danger b{color:var(--red)}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:var(--navy);color:#fff;font-weight:600}
+  tr:nth-child(even) td{background:#F4F8F8}
+  .pill{display:inline-block;background:var(--teal);color:#fff;border-radius:20px;padding:2px 11px;font-size:12px;font-weight:600}
+  .pill.g{background:#E4ECEC;color:var(--body)}
+  .pill.r{background:var(--red)} .pill.a{background:var(--amber)}
+  /* flow diagram */
+  .flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;margin:18px 0}
+  .flow .step{flex:1;min-width:120px;background:var(--teal-lt);border:1px solid var(--teal-lt2);border-radius:10px;
+       padding:12px 10px;text-align:center;position:relative}
+  .flow .step .n{display:inline-block;width:24px;height:24px;line-height:24px;border-radius:50%;background:var(--teal);color:#fff;font-weight:700;font-size:13px;margin-bottom:6px}
+  .flow .step b{display:block;color:var(--navy);font-size:13.5px}
+  .flow .step small{color:var(--muted);font-size:11.5px}
+  .flow .arr{display:flex;align-items:center;color:var(--teal);font-size:22px;font-weight:700;padding:0 4px}
+  .stack-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin:14px 0}
+  .stack-grid .t{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .stack-grid .t b{color:var(--navy)} .stack-grid .t small{color:var(--muted);display:block}
+  /* Q&A */
+  details.qa{background:var(--white);border:1px solid var(--line);border-radius:10px;margin:9px 0;overflow:hidden}
+  details.qa summary{cursor:pointer;padding:13px 18px;font-weight:600;color:var(--navy);list-style:none;
+       background:#F8FBFB;display:flex;align-items:flex-start;gap:10px}
+  details.qa summary::-webkit-details-marker{display:none}
+  details.qa summary::before{content:"Q";background:var(--teal);color:#fff;width:22px;height:22px;min-width:22px;
+       border-radius:5px;text-align:center;line-height:22px;font-size:13px}
+  details.qa[open] summary{background:var(--teal-lt);border-bottom:1px solid var(--teal-lt2)}
+  details.qa .ans{padding:14px 18px 16px 50px}
+  details.qa .ans p{margin:6px 0}
+  .kbd{font-family:Consolas,monospace;background:#eef;padding:1px 6px;border-radius:4px;font-size:13px;color:#334}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:900px){.wrap{flex-direction:column}nav.toc{position:relative;height:auto;width:100%;min-width:0}
+       main{padding:24px}.two,.stack-grid{grid-template-columns:1fr}header.hero{margin:-24px -24px 24px;padding:30px 24px}}
+  .footer{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+  .badge-row{margin:10px 0}
+  .anchor{scroll-margin-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav class="toc">
+  <h2>VetAI Diagnostics</h2>
+  <div class="sub">Technical Study Guide · FYP Viva</div>
+  <a class="grp">Foundation</a>
+  <a href="#overview">1. Project ek nazar mein</a>
+  <a href="#architecture">2. Full Architecture + Flow</a>
+  <a href="#trap">3. ⚠️ 3 vs 7 vs 26 (Trap)</a>
+  <a class="grp">Request Flows</a>
+  <a href="#flow-image">4. Image Detection Flow</a>
+  <a href="#flow-symptom">5. Symptom Diagnosis Flow</a>
+  <a href="#flow-chat">6. VetChat Flow</a>
+  <a class="grp">Machine Learning</a>
+  <a href="#mobilenet">7. MobileNetV2 kya hai</a>
+  <a href="#transfer">8. Transfer Learning</a>
+  <a href="#training">9. Dataset Training (step-by-step)</a>
+  <a href="#preprocess">10. Preprocessing & Predict</a>
+  <a class="grp">Backend & Data</a>
+  <a href="#gemini">11. Gemini Integration</a>
+  <a href="#database">12. Database Design</a>
+  <a href="#mysql">13. ⭐ MySQL kyun, MongoDB kyun nahi</a>
+  <a href="#auth">14. Auth & JWT Security</a>
+  <a href="#frontend">15. Frontend (React)</a>
+  <a class="grp">Wrap-up</a>
+  <a href="#limits">16. Limitations & Future</a>
+  <a href="#qa">17. 🎯 Viva Q&A Bank (40+)</a>
+  <a href="#oneliners">18. One-liner cheat answers</a>
+</nav>
+
+<main>
+<header class="hero">
+  <div class="ey">Final Year Project · Viva Preparation</div>
+  <h1>VetAI Diagnostics — Deep Technical Understanding</h1>
+  <p>Animal disease detection platform. Har component ka kaam, flow, aur "kyun" — taa ke viva mein har technical sawaal ka confident jawab de sako.</p>
+  <div class="meta">Stack: Django + DRF · React + Vite · TensorFlow / MobileNetV2 · MySQL · Gemini API &nbsp;|&nbsp; Roman-Urdu + English explanation</div>
+</header>
+
+<p class="lead"><b>Is doc ko kaise parho:</b> Pehle section 1–3 (foundation) — yeh poora picture deta hai. Phir 4–6 (flows) — "jab user button dabata hai to kya hota hai". Phir 7–10 (ML, sab se zyada sawaal yahin se aate hain). Aakhir mein section 17 ka Q&A bank revise kar lena. Har technical term English mein hai, samajh Roman-Urdu mein.</p>
+
+<!-- ===================================================== -->
+<span class="sec-tag">Foundation</span>
+<h2 class="sec anchor" id="overview">1. Project ek nazar mein</h2>
+
+<p>VetAI Diagnostics ek web platform hai jo <b>jaanwaron (cattle/cows) ki bimari detect</b> karta hai aur uska <b>ilaaj/treatment</b> bhi batata hai. Farmer ko mehngi/door ki vet visit se pehle ek <b>instant second opinion</b> milta hai.</p>
+
+<div class="card tl">
+<b>System teen tarah ki "intelligence" use karta hai:</b>
+<ol>
+  <li><b>Image se detection (Deep Learning / CNN):</b> Jaanwar ki photo upload karo → ek trained MobileNetV2 model batata hai bimari + confidence %.</li>
+  <li><b>Symptoms se diagnosis (Rule-based matching):</b> Photo na ho to symptoms select karo → ek matching algorithm sab se milti-julti bimari nikaalta hai.</li>
+  <li><b>Treatment info + Vet Chat (Gemini AI):</b> Bimari ka naam mil jaane ke baad Google Gemini se real-time symptoms, treatment, antibiotics, prevention aata hai. Saath mein ek vet chatbot bhi hai.</li>
+</ol>
+</div>
+
+<table>
+<tr><th>Layer</th><th>Technology</th><th>Kaam</th></tr>
+<tr><td>Frontend</td><td>React 19 + Vite + Tailwind CSS, React Query, Axios</td><td>Chat/upload UI, results dikhana (Vercel pe deploy)</td></tr>
+<tr><td>Backend API</td><td>Django 5.2 + Django REST Framework</td><td>Saare endpoints, logic, auth (Railway pe deploy)</td></tr>
+<tr><td>ML</td><td>TensorFlow / Keras, MobileNetV2</td><td>Image se bimari ka classification</td></tr>
+<tr><td>External AI</td><td>Google Gemini API (<code>gemini-2.5-flash</code>)</td><td>Disease info + Vet chat</td></tr>
+<tr><td>Database</td><td>MySQL 8 (utf8mb4)</td><td>Users, detections, history</td></tr>
+<tr><td>Auth</td><td>JWT (SimpleJWT) + Django <code>create_user</code> hashing</td><td>Secure login/session</td></tr>
+</table>
+
+<!-- ===================================================== -->
+<h2 class="sec anchor" id="architecture">2. Full Architecture + Data Flow</h2>
+
+<p>Yeh poore system ka high-level flow hai. Ek request browser se chalti hai aur teen possible "engines" mein se kisi ek tak pohanchti hai:</p>
+
+<div class="flow">
+  <div class="step"><span class="n">1</span><b>React App</b><small>Browser / Vercel</small></div>
+  <div class="arr">›</div>
+  <div class="step"><span class="n">2</span><b>HTTPS + JWT</b><small>Bearer token</small></div>
+  <div class="arr">›</div>
+  <div class="step"><span class="n">3</span><b>Django REST API</b><small>Railway</small></div>
+  <div class="arr">›</div>
+  <div class="step"><span class="n">4</span><b>Engine</b><small>CNN / Rules / Gemini</small></div>
+  <div class="arr">›</div>
+  <div class="step"><span class="n">5</span><b>MySQL</b><small>Save + return</small></div>
+</div>
+
+<div class="card">
+<h4>Backend andar se 3 Django apps mein bata hua hai:</h4>
+<ul>
+  <li><code>accounts/</code> — user registration (login JWT se hota hai).</li>
+  <li><code>animal/</code> — main app: image detection, symptom diagnosis, history, statistics, vet chat, Gemini service.</li>
+  <li><code>ml_model/</code> — model architecture (<code>disease_detector.py</code>), training command, trained model files (<code>.h5</code>), <code>disease_info.json</code>.</li>
+</ul>
+</div>
+
+<h4>Saare API endpoints (yeh yaad rakhna useful hai)</h4>
+<table>
+<tr><th>Method + URL</th><th>Kaam</th></tr>
+<tr><td><code>POST /api/register/</code></td><td>Naya user banana</td></tr>
+<tr><td><code>POST /api/token/</code></td><td>Login → JWT access + refresh token</td></tr>
+<tr><td><code>POST /api/token/refresh/</code></td><td>Access token refresh</td></tr>
+<tr><td><code>POST /api/animal/detect/</code></td><td>Image upload → CNN se bimari detect</td></tr>
+<tr><td><code>GET&nbsp; /api/symptoms/</code></td><td>93 symptoms ki list (dropdown ke liye)</td></tr>
+<tr><td><code>POST /api/diagnose/</code></td><td>Symptoms → rule-based diagnosis (top 5)</td></tr>
+<tr><td><code>GET&nbsp; /api/animal/history/</code></td><td>User ki saari image detections</td></tr>
+<tr><td><code>GET&nbsp; /api/animal/statistics/</code></td><td>Disease distribution, avg confidence</td></tr>
+<tr><td><code>POST /api/animal/vetchat/</code></td><td>Gemini-powered vet chatbot</td></tr>
+<tr><td><code>GET&nbsp; /api/diseases/&lt;id&gt;/</code></td><td>Ek bimari ki detail</td></tr>
+</table>
+
+<!-- ===================================================== -->
+<h2 class="sec anchor" id="trap">3. ⚠️ Sab se zaroori: 3 vs 7 vs 26 (Examiner Trap)</h2>
+
+<div class="danger">
+<b>Yeh galti mat karna.</b> Agar examiner pooche "tumhara model kitni bimari detect karta hai?" — to yeh exact numbers honi chahiye. System mein 3 alag-alag numbers hain, har ek ka alag matlab:
+</div>
+
+<table>
+<tr><th>Number</th><th>Kahan se</th><th>Kya matlab</th></tr>
+<tr><td><span class="pill">3 classes</span></td><td>Trained CNN model (<code>cow_disease_detector_classes.json</code>)</td>
+    <td><b>Image model sirf 3 cheezein pehchaanta hai:</b> <code>foot-and-mouth</code>, <code>lumpy</code> (skin disease), aur <code>healthy</code>. <b>Yeh sach hai jab koi photo upload karta hai.</b></td></tr>
+<tr><td><span class="pill a">26 diseases</span></td><td>Symptom dataset (<code>Training.csv</code>)</td>
+    <td>Symptom-based checker <b>93 symptoms</b> ko <b>26 bimariyon</b> se match karta hai (blackleg, bloat, mastitis, foot rot, liver fluke, etc.). <b>Yeh deep learning nahi — rule-based matching hai.</b></td></tr>
+<tr><td><span class="pill g">7 entries</span></td><td><code>disease_info.json</code></td>
+    <td>Sirf treatment/severity ka <b>fallback text</b> 7 bimariyon ka likha hua hai. Yeh detection nahi karta — sirf info deta hai jab Gemini fail ho.</td></tr>
+</table>
+
+<div class="note">
+<b>Confident jawab:</b> "Mere paas do diagnosis paths hain. <b>Image path</b> ek MobileNetV2 CNN hai jo 3 classes pe train hua hai (foot-and-mouth, lumpy skin, healthy) — dataset limited tha is liye 3. <b>Symptom path</b> ek rule-based matching engine hai jo 93 symptoms ko 26 cattle diseases se match karta hai. Treatment guidance dono cases mein real-time Gemini API se aati hai, with a local JSON fallback."
+</div>
+<p class="ur">Agar puchein "sirf 3 kyun?" → honest answer: <i>"Image dataset sirf in 3 classes ka high-quality data available tha. Architecture scalable hai — naya labelled data add karke <code>num_classes</code> automatically barh jaata hai aur model dobara train ho jaata hai. Symptom-based engine wider coverage (26) deta hai jahan image data nahi tha."</i></p>
+
+<!-- ===================================================== -->
+<span class="sec-tag">Request Flows — "button dabane ke baad kya hota hai"</span>
+<h2 class="sec anchor" id="flow-image">4. Image Detection Flow (<code>/api/animal/detect/</code>)</h2>
+
+<div class="flow">
+  <div class="step"><span class="n">1</span><b>Upload</b><small>photo + token</small></div><div class="arr">›</div>
+  <div class="step"><span class="n">2</span><b>Auth + Validate</b><small>≤10MB, jpg/png</small></div><div class="arr">›</div>
+  <div class="step"><span class="n">3</span><b>Preprocess</b><small>224×224 RGB</small></div><div class="arr">›</div>
+  <div class="step"><span class="n">4</span><b>CNN predict</b><small>softmax → argmax</small></div><div class="arr">›</div>
+  <div class="step"><span class="n">5</span><b>Gemini info</b><small>treatment</small></div><div class="arr">›</div>
+  <div class="step"><span class="n">6</span><b>Save + Return</b><small>MySQL → JSON</small></div>
+</div>
+
+<ol>
+  <li><b>Frontend (<code>ImageDiagnosis.jsx</code>):</b> user image select karta hai → <code>multipart/form-data</code> POST jisme header mein <code>Authorization: Bearer &lt;access_token&gt;</code>.</li>
+  <li><b>Authentication:</b> DRF ka <code>JWTAuthentication</code> token verify karta hai; <code>permission_classes = [IsAuthenticated]</code> — bina login ke 401.</li>
+  <li><b>Validation:</b> file size ≤ 10MB, extension <code>.jpg/.jpeg/.png/.gif</code>. Phir image ek temp file mein save hoti hai (cross-platform <code>tempfile</code>).</li>
+  <li><b>Model load (Singleton):</b> <code>DiseaseDetectionModel</code> ek singleton hai — <code>.h5</code> model sirf <b>pehli baar</b> memory mein load hota hai, baad mein cached. (Performance ke liye zaroori — har request pe 13MB model load karna slow hoga.)</li>
+  <li><b>Preprocess:</b> image ko <code>224×224</code> RGB pe resize, numpy array, <code>expand_dims</code> (batch dimension). <span class="pill">Important</span> Yahan <b>/255 nahi</b> karte — kyun ki model ke andar hi ek <code>Rescaling(1/255)</code> layer hai. (Training aur prediction ka preprocessing same rakhne ke liye.)</li>
+  <li><b>Predict:</b> <code>model.predict()</code> → 3 probabilities (softmax). <code>argmax</code> = sab se zyada probability wali class = predicted disease; us probability ko <b>confidence score</b> bolte hain.</li>
+  <li><b>Disease info (Gemini):</b> predicted disease ka naam le kar <code>get_disease_info()</code> call hota hai → Gemini real-time JSON deta hai: severity, symptoms, treatment, prevention, antibiotics, contagious. Gemini fail ho to <code>disease_info.json</code> fallback.</li>
+  <li><b>Save:</b> ek <code>AnimalDetection</code> row MySQL mein ban-ti hai (image path, disease_name, confidence, severity, aur saare JSON fields).</li>
+  <li><b>Response:</b> serializer JSON banata hai → frontend (<code>DiseaseResults.jsx</code>) result card dikhata hai. Agar confidence &lt; 0.4 ho to ek "low confidence — vet se confirm karo" warning bhi add hoti hai.</li>
+</ol>
+
+<!-- ===================================================== -->
+<h2 class="sec anchor" id="flow-symptom">5. Symptom Diagnosis Flow (<code>/api/diagnose/</code>)</h2>
+<p class="ur">Yeh path <b>deep learning use nahi karta</b> — yeh ek scoring/matching algorithm hai. Examiner ye difference zaroor pooch sakta hai.</p>
+
+<ol>
+  <li><b>Symptoms list:</b> frontend pehle <code>GET /api/symptoms/</code> call karta hai → <code>DatasetProcessor</code> <code>Training.csv</code> ke columns parh kar 93 symptoms return karta hai.</li>
+  <li><b>User selection:</b> user kuch symptoms tick karta hai → <code>POST /api/diagnose/</code> with <code>{"symptoms":[...]}</code>.</li>
+  <li><b>Matching (<code>DatasetProcessor.diagnose</code>):</b> har bimari ke known symptoms se input symptoms match kiye jaate hain (substring matching), phir score nikalta hai:
+    <pre><span class="c"># match_ratio  = kitne input symptoms match hue / total input</span>
+<span class="c"># coverage     = matches / us disease ke kul symptoms</span>
+confidence = (match_ratio * <span class="k">0.6</span>) + (coverage * <span class="k">0.4</span>)</pre>
+  </li>
+  <li><b>Top 5:</b> sab bimariyan confidence se sort hoti hain, top 5 return.</li>
+  <li><b>Treatment:</b> sab se best match ke liye Gemini se treatment/prevention/medicines aate hain.</li>
+  <li><b>Save:</b> ek <code>SymptomDiagnosis</code> row ban-ti hai (input symptoms, matched disease, match_rate, treatment, etc.).</li>
+</ol>
+
+<div class="note"><b>Do engine kyun?</b> Image hamesha available nahi hoti (kabhi sirf symptoms pata hote hain), aur image model sirf 3 classes janta hai. Symptom engine 26 bimariyon ko cover karke gap bharta hai. Dono complementary hain.</div>
+
+<!-- ===================================================== -->
+<h2 class="sec anchor" id="flow-chat">6. VetChat Flow (<code>/api/animal/vetchat/</code>)</h2>
+<ul>
+  <li>Frontend (<code>VetChat.jsx</code>) user ka message + pichli chat history bhejta hai.</li>
+  <li>Backend ek <b>secure proxy</b> hai — API key kabhi frontend pe expose nahi hoti, server-side hi Gemini ko call hota hai.</li>
+  <li>Ek <b>system prompt</b> set hota hai: "professional veterinary assistant, safety-first, serious cases pe vet ko refer karo, definitive diagnosis avoid karo."</li>
+  <li>Sirf aakhri <b>10 messages</b> context mein bhejte hain (token/cost control). Settings: <code>temperature 0.7</code>, <code>maxOutputTokens 2048</code>.</li>
+  <li>Multiple Gemini models try hote hain (fallback list) — robustness ke liye.</li>
+</ul>
+
+<!-- ===================================================== -->
+<span class="sec-tag">Machine Learning — yahan se sab se zyada sawaal aate hain</span>
+<h2 class="sec anchor" id="mobilenet">7. MobileNetV2 kya cheez hai?</h2>
+
+<p><b>MobileNetV2</b> Google ka banaya hua ek <b>Convolutional Neural Network (CNN)</b> architecture hai jo specially <b>mobile / low-resource</b> devices ke liye design hua. Yeh "accuracy" aur "speed/size" ke beech behtareen balance deta hai.</p>
+
+<h4>Aam zubaan mein CNN kya hai?</h4>
+<p class="ur">CNN ek aisa network hai jo image ko layer-by-layer dekh kar <b>patterns</b> seekhta hai: pehli layers simple cheezein (edges, colours, lines), agli layers complex cheezein (shapes, texture, "lumpy skin jaisa pattern"). Aakhir mein yeh decide karta hai ke image kis class ki hai. Bilkul jaise ek vet experience se seekhta hai ke "yeh daane lumpy skin disease ke hain".</p>
+
+<h4>MobileNetV2 special kyun? (ye points viva mein bolo)</h4>
+<ul>
+  <li><b>Depthwise Separable Convolutions:</b> normal convolution ko do chhoti steps mein torta hai → <b>bohot kam parameters & computation</b> (≈ 3.4M params), lekin accuracy lagbhag barqaraar.</li>
+  <li><b>Lightweight & fast:</b> file sirf ~13MB, prediction tezi se (CPU pe bhi chal jata hai) — farmer ke liye practical.</li>
+  <li><b>Pre-trained on ImageNet:</b> pehle se 1.4 million images (1000 classes) pe train hai → general visual features already aata hai → hamein chhote dataset pe bhi acha result milta hai (transfer learning).</li>
+  <li><b>Inverted residuals + linear bottlenecks:</b> (advanced) information ko efficiently flow karne deta hai bina zyada compute ke.</li>
+</ul>
+
+<div class="note"><b>Alternatives kyun nahi?</b> ResNet50 / VGG16 zyada bhaari (params/size bohot zyada) — chhote dataset aur low-cost deployment ke liye overkill aur slow. Scratch se CNN banate to itne chhote dataset pe overfit ho jata. Is liye <b>MobileNetV2 + transfer learning</b> best fit tha.</div>
+
+<!-- ===================================================== -->
+<h2 class="sec anchor" id="transfer">8. Transfer Learning (model ki actual architecture)</h2>
+<p class="ur"><b>Transfer learning</b> ka matlab: ek already-trained network ka "general knowledge" reuse karna, aur upar sirf apni problem ke liye chhota sa hissa naya train karna. Faida: kam data chahiye, training fast, accuracy achi.</p>
+
+<p>Hamara model (<code>disease_detector.py → build_model</code>) aise bana hai:</p>
+<pre><span class="k">model</span> = Sequential([
+    Input(shape=(<span class="k">224, 224, 3</span>)),       <span class="c"># RGB image</span>
+    Rescaling(<span class="k">1./255</span>),                  <span class="c"># pixels 0-255 → 0-1 (andar hi)</span>
+    MobileNetV2(weights=<span class="s">'imagenet'</span>,      <span class="c"># pre-trained base</span>
+                include_top=<span class="k">False</span>,
+                trainable=<span class="k">False</span>),          <span class="c"># BASE FROZEN — wapas train nahi</span>
+    GlobalAveragePooling2D(),               <span class="c"># features → ek vector</span>
+    Dense(<span class="k">256</span>, activation=<span class="s">'relu'</span>),
+    Dropout(<span class="k">0.5</span>),                       <span class="c"># overfitting roko</span>
+    Dense(<span class="k">128</span>, activation=<span class="s">'relu'</span>),
+    Dropout(<span class="k">0.3</span>),
+    Dense(num_classes, activation=<span class="s">'softmax'</span>) <span class="c"># 3 classes → probabilities</span>
+])
+model.compile(optimizer=Adam(lr=<span class="k">0.001</span>),
+              loss=<span class="s">'categorical_crossentropy'</span>,
+              metrics=[<span class="s">'accuracy'</span>])</pre>
+
+<table>
+<tr><th>Cheez</th><th>Kya</th><th>Kyun</th></tr>
+<tr><td>Base frozen</td><td><code>trainable=False</code></td><td>ImageNet ka seekha hua zaaya na ho; sirf naye layers train hon → fast + chhote data pe achha</td></tr>
+<tr><td><code>GlobalAveragePooling2D</code></td><td>Feature map → 1 vector</td><td>Parameters kam, overfitting kam (Flatten se behtar)</td></tr>
+<tr><td><code>Dropout 0.5 / 0.3</code></td><td>Random neurons off</td><td>Overfitting rokne ke liye regularization</td></tr>
+<tr><td><code>softmax</code></td><td>Output → probabilities (sum=1)</td><td>Har class ka confidence milta hai</td></tr>
+<tr><td><code>categorical_crossentropy</code></td><td>Loss function</td><td>Multi-class classification ka standard loss</td></tr>
+<tr><td><code>Adam, lr=0.001</code></td><td>Optimizer</td><td>Weights ko update karta hai, fast convergence</td></tr>
+</table>
+
+<!-- ===================================================== -->
+<h2 class="sec anchor" id="training">9. Dataset ko train kaise kiya (step-by-step)</h2>
+<p>Training command: <code>python manage.py train_model --dataset "&lt;path&gt;" --epochs 50</code>. Andar yeh hota hai (<code>DiseaseDetectionModel.train</code>):</p>
+
+<ol>
+  <li><b>Dataset structure:</b> har bimari ek folder, us folder mein us bimari ki images:
+    <pre>dataset/
+├── foot-and-mouth/   img1.jpg ...
+├── lumpy/            img1.jpg ...
+└── healthy/          img1.jpg ...</pre>
+    Folder names hi <b>class names</b> ban-te hain; <code>num_classes</code> = folders ki ginti (automatic).</li>
+
+  <li><b>Train/Validation split:</b> <code>validation_split=0.2</code> → 80% data training, 20% validation (model ko check karne ke liye jo usne dekha nahi).</li>
+
+  <li><b>Data Augmentation (<code>ImageDataGenerator</code>):</b> training images ko thoda randomly badalte hain taa ke model zyada robust bane aur ratta na maare:
+    <ul>
+      <li><code>rotation_range=20</code> (20° tak ghumao)</li>
+      <li><code>width/height_shift=0.2</code> (idhar-udhar shift)</li>
+      <li><code>horizontal_flip=True</code> (mirror)</li>
+      <li><code>zoom_range=0.2</code>, <code>shear_range=0.2</code></li>
+    </ul>
+    <span class="pill">Note</span> Yahan rescale=None — kyun ke rescaling model ke andar hai (consistency).</li>
+
+  <li><b>Class weights (imbalance handle):</b> agar kisi bimari ki images kam hain to <code>compute_class_weight('balanced')</code> se us class ko zyada weight milta hai — taa ke model bari class ki taraf biased na ho.</li>
+
+  <li><b>Callbacks (smart training):</b>
+    <ul>
+      <li><code>EarlyStopping(patience=10, restore_best_weights=True)</code> — agar validation loss 10 epochs tak improve na ho to ruk jao, aur sab se acha version wapas le lo. (Overfitting se bachata hai.)</li>
+      <li><code>ReduceLROnPlateau(factor=0.5, patience=5)</code> — jab seekhna ruk jaye to learning rate aadha kar do (fine-tuning).</li>
+      <li><code>ModelCheckpoint(save_best_only, monitor='val_accuracy')</code> — best model save karta rehta hai.</li>
+    </ul></li>
+
+  <li><b>Train:</b> <code>model.fit(...)</code> 50 epochs tak (ya jab tak EarlyStopping na rokay).</li>
+
+  <li><b>Evaluate:</b> validation set pe <b>accuracy & loss</b>, phir <code>classification_report</code> (precision, recall, F1) aur <code>confusion_matrix</code> print hoti hai.</li>
+
+  <li><b>Save:</b> teen cheezein save hoti hain — <code>cow_disease_detector.h5</code> (model), <code>...classes.pkl/.json</code> (index→disease mapping), aur ek <code>SavedModel</code> folder.</li>
+</ol>
+
+<div class="warn"><b>Important honesty point:</b> Agar examiner exact accuracy % pooche aur tumhare paas number nahi, to bolo: "Validation set pe accuracy, precision, recall aur confusion matrix training ke end mein print hoti hain (classification_report). Final reported value &lt;apni training run wali&gt; thi." Jhooti number mat bolna — agar yaad nahi to "training output mein log hoti hai" keh dena. <b>(Aaj training dobara chala kar exact numbers note kar lo — niche command di hai.)</b></div>
+
+<!-- ===================================================== -->
+<h2 class="sec anchor" id="preprocess">10. Preprocessing & Prediction (consistency trick)</h2>
+<p>Ek important design decision: <b>training aur prediction dono mein same preprocessing</b>. Is liye normalization (/255) model ke andar <code>Rescaling</code> layer mein rakha gaya, baahar nahi. Agar baahar bhi /255 kar dete to image do baar normalize ho jati (0–1 ko phir /255) → galat predictions.</p>
+<pre><span class="c"># prediction (views.py)</span>
+img = load_img(path, target_size=(<span class="k">224,224</span>), color_mode=<span class="s">'rgb'</span>)
+arr = img_to_array(img)              <span class="c"># 0-255 values</span>
+arr = expand_dims(arr, axis=<span class="k">0</span>)      <span class="c"># batch shape (1,224,224,3)</span>
+<span class="c"># NO /255 here — model ka Rescaling layer karega</span>
+preds = model.predict(arr)          <span class="c"># [[0.92, 0.05, 0.03]]</span>
+disease = classes[argmax(preds)]    <span class="c"># 'foot-and-mouth'</span>
+confidence = max(preds)             <span class="c"># 0.92</span></pre>
+
+<!-- ===================================================== -->
+<span class="sec-tag">Backend & Data</span>
+<h2 class="sec anchor" id="gemini">11. Gemini Integration (treatment + chat)</h2>
+<ul>
+  <li><b>Model:</b> <code>gemini-2.5-flash</code> (env se configurable), plus fallback models list.</li>
+  <li><b>Structured output:</b> prompt Gemini ko bolta hai "sirf valid JSON do" with exact keys (name, severity, symptoms, treatment, prevention, contagious, antibiotics). <code>responseMimeType: application/json</code> bhi set hai.</li>
+  <li><b>Robustness:</b> agar JSON toot jaye/truncate ho to ek <b>repair function</b> (<code>gemini_json_fix</code>) usay theek karta hai; phir bhi na bane to <b>compact retry</b>; phir bhi fail to <b>local <code>disease_info.json</code> fallback</b>; aakhri haal mein safe default. <b>App kabhi crash nahi karti.</b></li>
+  <li><b>Safety:</b> medical content (antibiotics, fatal outcomes) default filter mein block ho jata tha, is liye <code>BLOCK_ONLY_HIGH</code> rakha taa ke legit veterinary info na ruke.</li>
+  <li><b>Security:</b> API key <code>.env</code> se aati hai, server-side rehti hai, error messages mein redact hoti hai.</li>
+</ul>
+
+<!-- ===================================================== -->
+<h2 class="sec anchor" id="database">12. Database Design</h2>
+<p>Do main tables (Django models), dono Django ke built-in <code>User</code> se <b>ForeignKey</b> se jude:</p>
+
+<div class="two">
+<div class="card tl"><h4>AnimalDetection (image path)</h4>
+<ul>
+  <li><code>user</code> (FK), <code>image</code></li>
+  <li><code>disease_name</code>, <code>confidence_score</code></li>
+  <li><code>severity</code> (choices)</li>
+  <li><code>symptoms / treatment / prevention / antibiotics</code> → <b>JSONField</b> (lists)</li>
+  <li><code>all_predictions</code> (JSON), <code>contagious</code> (bool)</li>
+  <li><code>status</code>, <code>created_at</code>, <code>updated_at</code></li>
+</ul></div>
+<div class="card tl"><h4>SymptomDiagnosis (symptom path)</h4>
+<ul>
+  <li><code>user</code> (FK), <code>input_symptoms</code> (JSON)</li>
+  <li><code>disease_name</code>, <code>match_rate</code>, <code>confidence_score</code></li>
+  <li><code>matched_symptoms</code>, <code>treatment</code>, <code>medicines</code> (JSON)</li>
+  <li><code>all_results</code> (top-5, JSON)</li>
+  <li><code>status</code>, timestamps</li>
+</ul></div>
+</div>
+
+<div class="note"><b>Smart point:</b> Fixed columns (user, disease, confidence, dates) <b>relational</b> hain, lekin variable-length lists (symptoms, treatment steps) <b>JSONField</b> mein. MySQL 5.7+ native JSON columns support karta hai — to humein <b>relational integrity + document-style flexibility dono ek hi DB mein</b> mil gaye. Saath mein performance ke liye <code>indexes</code> bhi hain (user+date, disease_name).</div>
+
+<!-- ===================================================== -->
+<h2 class="sec anchor" id="mysql">13. ⭐ MySQL kyun, MongoDB kyun nahi? (full answer)</h2>
+<p class="ur">Yeh tumhara specific sawaal tha — viva mein bhi aa sakta hai. Strong, defensible answer:</p>
+
+<div class="card tl">
+<h4>1. Data relational hai, document nahi</h4>
+<p>Har detection ek <b>user</b> se belong karti hai (<code>User → many Detections</code>). Yeh clear <b>one-to-many relationship</b> hai with a fixed schema. Relational DB (MySQL) exactly isi ke liye bana hai — foreign keys, JOINs, referential integrity (<code>on_delete=CASCADE</code> — user delete to uski detections bhi).</p>
+</div>
+<div class="card tl">
+<h4>2. Django officially relational DBs ko support karta hai</h4>
+<p>Django ORM ka first-class support MySQL/PostgreSQL/SQLite ke liye hai. MongoDB ke liye official support nahi — third-party (Djongo) chahiye jo migrations/JWT ke saath buggy aur unstable hota hai. MySQL ke saath migrations, admin panel, auth — sab out-of-the-box chalta hai.</p>
+</div>
+<div class="card tl">
+<h4>3. ACID transactions & consistency</h4>
+<p>Medical/health records mein data ka <b>accurate aur consistent</b> hona zaroori hai. MySQL fully <b>ACID-compliant</b> hai (Atomicity, Consistency, Isolation, Durability). Reliability is project ke liye flexibility se zyada important thi.</p>
+</div>
+<div class="card tl">
+<h4>4. Flexibility ki zaroorat thi → JSONField se mil gayi</h4>
+<p>Jahan flexible/variable data chahiye tha (symptoms list, treatment steps), wahan MySQL ke <b>native JSON columns</b> (Django <code>JSONField</code>) use kiye. To "schema-less flexibility" ka jo aam faida MongoDB ka hota hai, woh humein relational DB ke andar hi mil gaya — bina relational benefits khoye.</p>
+</div>
+<div class="card tl">
+<h4>5. Scale appropriate hai</h4>
+<p>MongoDB ka asal faida tab hai jab data huge-scale, schema-less, ya heavily distributed ho (e.g. logs, IoT streams). Hamara data structured aur moderate-scale hai — MongoDB yahan over-engineering hoti.</p>
+</div>
+
+<div class="note"><b>One-line jawab:</b> "Mera data structured aur relational hai (user ↔ detections), aur Django relational DBs ko natively support karta hai with ACID guarantees. Jahan flexibility chahiye thi wahan MySQL ke JSON columns use kiye — to mujhe relational integrity + document flexibility dono mil gaye. MongoDB schema-less, huge-scale use-cases ke liye behtar hai, jo is project ki need nahi thi."</div>
+
+<!-- ===================================================== -->
+<h2 class="sec anchor" id="auth">14. Authentication & Security (JWT)</h2>
+<ul>
+  <li><b>Register:</b> <code>create_user()</code> password ko Django ke <b>PBKDF2</b> algorithm se hash karta hai — plain text kabhi store nahi hota.</li>
+  <li><b>Login:</b> <code>POST /api/token/</code> (SimpleJWT) → <b>access token (24h)</b> + <b>refresh token (7 days)</b>. <code>ROTATE_REFRESH_TOKENS=True</code>.</li>
+  <li><b>Protected APIs:</b> har request mein <code>Authorization: Bearer &lt;token&gt;</code>; <code>IsAuthenticated</code> ensure karta hai sirf logged-in user apna data dekhe (queries hamesha <code>filter(user=request.user)</code>).</li>
+  <li><b>JWT kyun (vs session):</b> stateless — server pe session store nahi karna parta, scalable, aur frontend (Vercel) + backend (Railway) alag domains pe hain to token-based auth clean hai.</li>
+  <li><b>Aur:</b> CORS allowed origins, CSRF trusted origins, file size/type validation, HTTPS (secure cookies jab DEBUG off), WhiteNoise static files, API key <code>.env</code> mein.</li>
+</ul>
+
+<!-- ===================================================== -->
+<h2 class="sec anchor" id="frontend">15. Frontend (React)</h2>
+<div class="stack-grid">
+  <div class="t"><b>React 19 + Vite</b><small>UI + fast dev/build</small></div>
+  <div class="t"><b>Tailwind CSS</b><small>Styling</small></div>
+  <div class="t"><b>React Query</b><small>API state/caching</small></div>
+  <div class="t"><b>Axios</b><small>HTTP requests + token header</small></div>
+</div>
+<p>Key components: <code>ImageDiagnosis</code> (upload), <code>SymptomDiagnosis</code> (symptom checker), <code>DiseaseResults</code> (result card), <code>DetectionHistory</code>, <code>Statistics</code>/<code>Dashboard</code> (charts), <code>VetChat</code> (chatbot), <code>SignIn/SignUp</code>, aur <code>ProtectedRoute</code> (token na ho to login pe redirect). Token <code>localStorage</code> mein, har request ke header mein lagta hai.</p>
+
+<!-- ===================================================== -->
+<span class="sec-tag">Wrap-up</span>
+<h2 class="sec anchor" id="limits">16. Limitations & Future Work (yeh khud bolo, marks milte hain)</h2>
+<ul>
+  <li><b>Image model sirf 3 classes</b> — limited image dataset ki wajah se. Future: zyada labelled images se classes barhana.</li>
+  <li><b>Symptom engine rule-based hai</b> (ML nahi) — future mein ise ek proper ML classifier (Decision Tree / Random Forest) bana sakte hain (notebook mein groundwork hai).</li>
+  <li><b>Gemini par dependency</b> treatment ke liye — offline fallback JSON hai par limited.</li>
+  <li><b>Sirf cattle/cows</b> — future: aur species (goat, poultry).</li>
+  <li><b>Accuracy training data quality pe depend</b> karti hai — disclaimer: yeh diagnostic suggestion hai, vet ki jagah nahi.</li>
+  <li>Future: mobile app, real-time video, multi-language, vet consultation booking.</li>
+</ul>
+
+<!-- ===================================================== -->
+<h2 class="sec anchor" id="qa">17. 🎯 Viva Q&A Bank</h2>
+<p class="ur">Click karke jawab kholo. Inhe loud bol kar practice karna.</p>
+
+<h3>General / Architecture</h3>
+<details class="qa"><summary>Apna project 30 seconds mein explain karo.</summary><div class="ans">
+<p>"VetAI Diagnostics ek AI-based web platform hai jo cattle ki bimariyan detect karta hai. User jaanwar ki photo upload karta hai, ek MobileNetV2 CNN model bimari classify karta hai with confidence score. Agar photo na ho to user symptoms select karke rule-based diagnosis le sakta hai. Bimari milne ke baad Google Gemini se real-time treatment, antibiotics aur prevention aata hai. Backend Django REST Framework, database MySQL, frontend React. Saari history aur statistics user ke account mein save hoti hain."</p>
+</div></details>
+
+<details class="qa"><summary>Tumhara tech stack kya hai aur har ek kyun chuna?</summary><div class="ans">
+<p>Django+DRF (rapid, secure, built-in auth + ORM), React+Vite (fast modern UI), TensorFlow/MobileNetV2 (lightweight image classification), MySQL (relational, ACID, Django native support), Gemini (real-time medical knowledge bina apni medical DB maintain kiye), JWT (stateless auth across separate frontend/backend domains).</p>
+</div></details>
+
+<details class="qa"><summary>Frontend aur backend kaise communicate karte hain?</summary><div class="ans">
+<p>REST API ke through, JSON over HTTPS. React Axios se requests bhejta hai jisme <code>Authorization: Bearer &lt;JWT&gt;</code> header hota hai. Django DRF token verify karke response JSON deta hai. CORS configured hai taa ke Vercel frontend Railway backend ko call kar sake.</p>
+</div></details>
+
+<h3>Database (tumhara specific area)</h3>
+<details class="qa"><summary>MongoDB kyun use nahi kiya, MySQL kyun?</summary><div class="ans">
+<p>"Data structured aur relational hai — har detection ek user se foreign key se judi hai. Django relational DBs ko natively support karta hai with ACID guarantees, jabke MongoDB ke liye unstable third-party adapter chahiye. Jahan flexibility chahiye thi (symptoms/treatment lists), wahan MySQL ke native JSON columns use kiye — to relational integrity + document flexibility dono mil gaye. MongoDB schema-less, huge-scale data ke liye behtar hai, jo meri need nahi thi." (Section 13 detail.)</p>
+</div></details>
+
+<details class="qa"><summary>JSONField kyun, alag table kyun nahi banayi symptoms ke liye?</summary><div class="ans">
+<p>Symptoms/treatment ek detection ke saath hamesha sath padhe jaate hain (kabhi alag query nahi hoti), variable length hote hain, aur unpe complex JOIN/search nahi chahiye. To inhe ek JSON column mein rakhna simple aur fast hai — bewajah normalization aur extra JOINs avoid ho gaye. Agar inpe filtering/reporting chahiye hoti to alag table behtar hoti.</p>
+</div></details>
+
+<details class="qa"><summary>Database mein relationships kaise hain?</summary><div class="ans">
+<p>Django built-in <code>User</code> table hai. <code>AnimalDetection</code> aur <code>SymptomDiagnosis</code> dono mein <code>user = ForeignKey(User, on_delete=CASCADE)</code> — one-to-many. User delete to uski saari records bhi delete. Performance ke liye <code>(user, created_at)</code> aur <code>disease_name</code> pe indexes hain.</p>
+</div></details>
+
+<h3>Machine Learning</h3>
+<details class="qa"><summary>MobileNetV2 kya hai aur kyun chuna?</summary><div class="ans">
+<p>Google ka lightweight CNN, depthwise-separable convolutions ki wajah se bohot kam parameters (~3.4M) aur fast inference, lekin acchi accuracy. ImageNet pe pre-trained hai to transfer learning se chhote dataset pe bhi achha kaam karta hai. ResNet/VGG bhaari aur slow hote — low-cost deployment aur chhote dataset ke liye MobileNetV2 ideal tha.</p>
+</div></details>
+
+<details class="qa"><summary>Transfer learning kya hai? Tumne kaise use kiya?</summary><div class="ans">
+<p>Pre-trained model ka general knowledge reuse karna. Maine MobileNetV2 base (ImageNet weights) ko <b>freeze</b> kiya (<code>trainable=False</code>) aur upar apni custom layers (GlobalAveragePooling → Dense 256 → Dropout → Dense 128 → Dropout → Dense softmax) add karke sirf woh train kiye. Faida: kam data, fast training, achi accuracy, overfitting kam.</p>
+</div></details>
+
+<details class="qa"><summary>Model kitni classes detect karta hai?</summary><div class="ans">
+<p>"Image CNN model 3 classes detect karta hai: foot-and-mouth, lumpy skin, aur healthy — kyun ke in 3 ka quality image data available tha. Iske ilawa ek symptom-based engine hai jo 93 symptoms ko 26 cattle diseases se match karta hai. Architecture scalable hai — naya data add karke classes barh jaati hain." (Section 3.)</p>
+</div></details>
+
+<details class="qa"><summary>Confidence score kya hai?</summary><div class="ans">
+<p>Softmax output layer har class ke liye 0–1 probability deta hai (sab ka sum 1). Sab se zyada probability wali class prediction ban-ti hai, aur woh probability hi confidence score hai. Agar &lt;0.4 ho to system warning deta hai ke vet se confirm karein.</p>
+</div></details>
+
+<details class="qa"><summary>Overfitting kaise roka?</summary><div class="ans">
+<p>(1) Data augmentation (rotation/flip/zoom/shift), (2) Dropout layers (0.5, 0.3), (3) Transfer learning + frozen base (kam trainable params), (4) EarlyStopping with restore_best_weights, (5) train/validation split se monitoring.</p>
+</div></details>
+
+<details class="qa"><summary>Data augmentation kya hai aur kyun?</summary><div class="ans">
+<p>Training images ko randomly thoda badalna (rotate, flip, zoom, shift) taa ke model alag-alag angle/lighting pe robust bane aur ratta na maare. Effectively dataset bara ho jata hai bina nayi images ke — chhote dataset mein bohot useful.</p>
+</div></details>
+
+<details class="qa"><summary>Loss function aur optimizer kaunsa, kyun?</summary><div class="ans">
+<p><code>categorical_crossentropy</code> — multi-class classification ka standard loss (predicted probabilities vs true one-hot label ka difference). <code>Adam</code> optimizer (lr=0.001) — adaptive learning rate, fast aur reliable convergence.</p>
+</div></details>
+
+<details class="qa"><summary>Class imbalance kaise handle ki?</summary><div class="ans">
+<p><code>compute_class_weight('balanced')</code> se har class ko uski frequency ke hisaab se weight diya — kam samples wali class ko zyada weight, taa ke model bari class ki taraf biased na ho.</p>
+</div></details>
+
+<details class="qa"><summary>Model ki accuracy kitni hai? Kaise measure ki?</summary><div class="ans">
+<p>Training ke end mein validation set pe accuracy, loss, aur <code>classification_report</code> (precision, recall, F1) plus confusion matrix nikalti hai. [Yahan apni actual training run wali value bolo — agar yaad nahi to keh do "training output mein log hoti hai, last run mein ~X% thi". <b>Aaj exact number note kar lo.</b>]</p>
+</div></details>
+
+<details class="qa"><summary>Symptom diagnosis ML hai ya nahi?</summary><div class="ans">
+<p>Nahi, woh <b>rule-based matching</b> hai, deep learning nahi. Input symptoms ko har disease ke known symptoms se match karke ek score deta hai: <code>0.6×match_ratio + 0.4×coverage</code>, phir top 5 sort karta hai. Image detection wala part deep learning (CNN) hai.</p>
+</div></details>
+
+<details class="qa"><summary>Image ko 224×224 kyun karte ho?</summary><div class="ans">
+<p>MobileNetV2 ka standard input size 224×224×3 hai (ImageNet pe isi pe train hua). Saari images same size honi chahiye taa ke model ka input fixed rahe.</p>
+</div></details>
+
+<details class="qa"><summary>Normalization (/255) kahan hoti hai?</summary><div class="ans">
+<p>Model ke andar ek <code>Rescaling(1/255)</code> layer mein — baahar nahi. Is se training aur prediction dono mein same preprocessing guarantee hoti hai. Agar baahar bhi /255 karte to double-normalization se predictions galat ho jate.</p>
+</div></details>
+
+<h3>Gemini / API</h3>
+<details class="qa"><summary>Gemini kyun use kiya, apni database kyun nahi banayi treatment ki?</summary><div class="ans">
+<p>Veterinary medical knowledge bohot bara aur badalta rehta hai. Gemini real-time accurate, up-to-date treatment/antibiotics/prevention deta hai bina humein ek bari medical database maintain kiye. Reliability ke liye ek local <code>disease_info.json</code> fallback bhi rakha hai jab API fail ho.</p>
+</div></details>
+
+<details class="qa"><summary>Agar Gemini API fail ho jaye to?</summary><div class="ans">
+<p>Multi-layer fallback: pehle JSON repair, phir compact retry, phir doosre Gemini models, phir local <code>disease_info.json</code>, aakhir mein safe default response. App kabhi crash nahi karti — graceful degradation.</p>
+</div></details>
+
+<details class="qa"><summary>API key secure kaise hai?</summary><div class="ans">
+<p><code>.env</code> file mein hai (git mein commit nahi), sirf server-side use hoti hai — frontend pe kabhi expose nahi. VetChat bhi server-side proxy ke through chalti hai. Error logs mein key redact hoti hai.</p>
+</div></details>
+
+<h3>Security & Deployment</h3>
+<details class="qa"><summary>Password kaise store hote hain?</summary><div class="ans">
+<p>Plain text mein bilkul nahi. Django <code>create_user()</code> PBKDF2 (salted hash) se password hash karta hai. Login pe hash compare hota hai.</p>
+</div></details>
+
+<details class="qa"><summary>JWT kya hai, kyun use kiya?</summary><div class="ans">
+<p>JSON Web Token — login ke baad ek signed token milta hai jo har request mein header mein jata hai. Stateless hai (server pe session store nahi), scalable, aur alag-alag domains (Vercel frontend / Railway backend) ke beech clean kaam karta hai. Access token 24h, refresh 7 days.</p>
+</div></details>
+
+<details class="qa"><summary>Ek user doosre ka data dekh sakta hai?</summary><div class="ans">
+<p>Nahi. Har query <code>filter(user=request.user)</code> karti hai, aur <code>IsAuthenticated</code> permission lagti hai. Token se identify hota hai ke kaun request kar raha hai.</p>
+</div></details>
+
+<details class="qa"><summary>File upload validation kaisi hai?</summary><div class="ans">
+<p>Max 10MB size, aur sirf <code>.jpg/.jpeg/.png/.gif</code> allowed. Invalid ho to 400 error. Image temp file mein process hoti hai phir clean up ho jati hai.</p>
+</div></details>
+
+<h3>Tough / conceptual</h3>
+<details class="qa"><summary>CNN kaise kaam karta hai, simple words mein?</summary><div class="ans">
+<p>Convolution layers image pe chhote filters slide karke patterns detect karti hain — pehli layers edges/colors, agli layers shapes/textures, gehri layers "disease jaisa pattern". Pooling size kam karti hai. Aakhir mein dense+softmax layer class decide karti hai. Network in filters ki values training ke dauraan khud seekhta hai.</p>
+</div></details>
+
+<details class="qa"><summary>Agar model galat prediction de to?</summary><div class="ans">
+<p>System confidence score dikhata hai aur low confidence (&lt;0.4) pe warning deta hai ke vet se confirm karein. Disclaimer hai ke yeh diagnostic suggestion hai, professional vet ki jagah nahi. Accuracy improve karne ke liye zyada/behtar training data chahiye.</p>
+</div></details>
+
+<details class="qa"><summary>Singleton pattern kahan use kiya aur kyun?</summary><div class="ans">
+<p><code>DiseaseDetectionModel</code> aur <code>DatasetProcessor</code> dono singleton hain. Model (~13MB) aur dataset sirf ek baar memory mein load hote hain, har request pe nahi — is se response fast hoti hai aur memory bachti hai.</p>
+</div></details>
+
+<details class="qa"><summary>Scalability — agar 10,000 users aa jayein?</summary><div class="ans">
+<p>Stateless JWT auth horizontal scaling allow karti hai (multiple backend instances). MySQL indexes queries fast rakhte hain. Model singleton + caching. Further: model serving alag service mein, DB read-replicas, CDN for static, rate limiting. (Future work.)</p>
+</div></details>
+
+<details class="qa"><summary>Image model 3 classes pe hai to lumpy ke ilawa skin disease ki photo doge to kya hoga?</summary><div class="ans">
+<p>Model usay teeno mein se kisi closest class mein daal dega (kyun ke softmax hamesha kuch na kuch deta hai), lekin confidence low aayegi. Isi liye low-confidence warning rakhi hai. Yeh ek known limitation hai — out-of-distribution detection future work hai.</p>
+</div></details>
+
+<!-- ===================================================== -->
+<h2 class="sec anchor" id="oneliners">18. One-liner cheat answers (last-minute revision)</h2>
+<table>
+<tr><th>Sawaal</th><th>Crisp jawab</th></tr>
+<tr><td>Project kya hai?</td><td>AI platform — cattle disease detect (image se CNN, symptoms se rules) + Gemini treatment.</td></tr>
+<tr><td>Image classes?</td><td>3: foot-and-mouth, lumpy, healthy.</td></tr>
+<tr><td>Symptom diseases?</td><td>26 diseases, 93 symptoms, rule-based matching.</td></tr>
+<tr><td>Model?</td><td>MobileNetV2 CNN + transfer learning, 224×224, softmax.</td></tr>
+<tr><td>Input size?</td><td>224 × 224 × 3 (RGB).</td></tr>
+<tr><td>Epochs / optimizer / loss?</td><td>50 epochs, Adam (0.001), categorical_crossentropy.</td></tr>
+<tr><td>Overfitting?</td><td>Augmentation + Dropout + frozen base + EarlyStopping.</td></tr>
+<tr><td>DB?</td><td>MySQL — relational, ACID, Django-native; JSON columns for flexible lists.</td></tr>
+<tr><td>MongoDB kyun nahi?</td><td>Data relational hai; Django MongoDB ko natively support nahi karta; flexibility JSONField se mil gayi.</td></tr>
+<tr><td>Auth?</td><td>JWT (access 24h / refresh 7d) + PBKDF2 password hashing.</td></tr>
+<tr><td>Treatment info?</td><td>Gemini API real-time, JSON fallback.</td></tr>
+<tr><td>Backend/Frontend?</td><td>Django REST Framework / React+Vite+Tailwind.</td></tr>
+<tr><td>Confidence?</td><td>Softmax probability of top class; &lt;0.4 → warning.</td></tr>
+</table>
+
+<div class="warn"><b>Aaj raat zaroor karo:</b> (1) Apne model ki <b>exact accuracy</b> note karo — <code>cd server &amp;&amp; python manage.py train_model --epochs 10</code> chala kar end ka classification_report dekho (ya jo last training output hai). (2) App ek baar locally chala kar live demo practice karo (image upload + symptom + chat). (3) Section 3 aur 13 dobara parho — yeh do sab se zyada poochhe jaane wale hain.</div>
+
+<div class="footer">
+VetAI Diagnostics · Technical Study Guide · Generated for FYP Viva preparation.<br>
+Yeh doc tumhare actual codebase (Django <code>animal/</code>, <code>ml_model/</code>, React <code>client/</code>) parh kar banaya gaya hai — saari technical details code se verified hain.
+</div>
+
+</main>
+</div>
+</body>
+</html>

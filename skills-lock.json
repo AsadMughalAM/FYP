@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "elite-powerpoint-designer": {
+      "source": "willem4130/claude-code-skills",
+      "sourceType": "github",
+      "skillPath": "skills/elite-powerpoint-designer/SKILL.md",
+      "computedHash": "c2ca991e1785f41aae6508efc3979b287cc74589160099ecf6b09a3e262828d1"
+    },
+    "powerpoint": {
+      "source": "igorwarzocha/opencode-workflows",
+      "sourceType": "github",
+      "skillPath": "cowork/.opencode/skill/powerpoint/SKILL.md",
+      "computedHash": "2280065c832be259b60991ed75670de27466abff3a2ad0c3f306aded69a634d3"
+    }
+  }
+}
